@@ -1,50 +1,96 @@
-# Welcome to your Expo app 👋
+# Marketplace — Mini marketplace de vêtements
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Application mobile et web d'un mini-marketplace de vêtements.
+Un seul codebase pour **iOS, Android et Web** grâce à Expo + React Native Web, avec **Supabase** comme backend unifié.
 
-## Get started
+> 🎓 Projet scolaire — Sup de Vinci — Coordinateur de Projets Informatiques — 2026
+> 👥 Équipe de 3 — 5 jours de développement
 
-1. Install dependencies
+## 🎯 Fonctionnalités
 
-   ```bash
-   npm install
-   ```
+**Côté utilisateur :**
+- Inscription / connexion (Supabase Auth)
+- Parcours des produits (liste + fiche détaillée)
+- Ajout aux favoris (persisté localement)
+- Ajout au panier (persisté localement)
+- Paiement via Stripe Checkout
 
-2. Start the app
+**Côté admin :**
+- CRUD produits via **Supabase Studio** (interface native Supabase)
+- Consultation des commandes via Supabase Studio
 
-   ```bash
-   npx expo start
-   ```
+## 🏗️ Architecture
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+┌─────────────────────────────────────────┐
+│    React Native + Expo (Web + Mobile)   │
+└────────────────┬────────────────────────┘
+                 │
+         ┌───────▼────────┐
+         │   Supabase     │
+         │  ┌──────────┐  │
+         │  │  Auth    │  │
+         │  │  DB      │  │  RLS policies
+         │  │  Storage │  │  (images produits)
+         │  │  Edge Fn │──┼──► Stripe API
+         │  └──────────┘  │
+         └────────────────┘
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+**Pas de backend custom** : toute la logique métier s'appuie sur Supabase (BDD, auth, storage) et sur des **Edge Functions** pour l'intégration Stripe sécurisée.
 
-## Learn more
+## 🛠️ Stack
 
-To learn more about developing your project with Expo, look at the following resources:
+- **React Native + Expo** (SDK 51+)
+- **React Native Web** (build web)
+- **React Navigation** (routing)
+- **Supabase** (auth + DB + storage + edge functions)
+- **Stripe Checkout** (paiement hébergé)
+- **AsyncStorage** (persistance panier & favoris)
+- **Expo WebBrowser** (redirection Stripe)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📋 Prérequis
 
-## Join the community
+- Node.js 18+
+- npm ou yarn
+- Expo CLI (via `npx`)
+- Compte Supabase (gratuit)
+- Compte Stripe (mode test)
+- Pour mobile : app **Expo Go** (iOS / Android)
 
-Join our community of developers creating universal apps.
+## 🚀 Installation
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+# Cloner le repo
+git clone git@github.com:Terapyy18/leico.git
+cd leico
+
+# Installer les dépendances
+npm install
+
+# Configurer l'environnement
+cp .env.example .env
+# Éditer .env (voir section suivante)
+
+# Lancer en mode dev
+npx expo start
+```
+
+Choisir ensuite :
+- `w` → navigateur (web)
+- `i` → simulateur iOS
+- `a` → émulateur Android
+- Scanner le QR code avec Expo Go sur mobile
+
+## 📚 Ressources
+
+- [Expo docs](https://docs.expo.dev/)
+- [Supabase docs](https://supabase.com/docs)
+- [Supabase RLS guide](https://supabase.com/docs/guides/auth/row-level-security)
+- [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
+- [Stripe Checkout](https://stripe.com/docs/checkout/quickstart)
+- [React Navigation](https://reactnavigation.org/)
+
+## 📝 Licence
+
+Projet scolaire Theo, Baptiste, Thomas — Sup de Vinci — 2026
