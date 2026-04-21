@@ -1,47 +1,29 @@
+import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
+  SectionList,
   Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useProducts, type Product } from '@/hooks/useProducts';
-
-function ProductCard({ product }: { product: Product }) {
-  const router = useRouter();
-
-  return (
-    <View>
-      {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          style={{ width: '100%', height: 180 }}
-          resizeMode="cover"
-        />
-      ) : null}
-      <Text>{product.name}</Text>
-      <Text>${product.price.toFixed(2)}</Text>
-      {product.description ? (
-        <Text numberOfLines={2}>{product.description}</Text>
-      ) : null}
-      <Pressable onPress={() => router.push(`/(tabs)/product/${product.id}`)}>
-        <Text>View Details</Text>
-      </Pressable>
-    </View>
-  );
-}
+import { useProductsByCategory } from '@/hooks/useProductsByCategory';
+import ProductCard from '@/components/ProductCard';
 
 export default function HomeScreen() {
-  const { products, loading, error } = useProducts();
+  const router = useRouter();
+  const { sections, loading, error } = useProductsByCategory();
+
+  const handlePress = useCallback(
+    (id: string) => router.push(`/(tabs)/product/${id}`),
+    [router]
+  );
 
   if (loading) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
-        <Text>Loading products...</Text>
+        <Text>Loading categories...</Text>
       </SafeAreaView>
     );
   }
@@ -49,7 +31,7 @@ export default function HomeScreen() {
   if (error) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Failed to load products</Text>
+        <Text>Failed to load</Text>
         <Text>{error}</Text>
       </SafeAreaView>
     );
@@ -57,11 +39,19 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <FlatList
-        data={products}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ProductCard product={item} />}
+        renderItem={({ item }) => (
+          <ProductCard product={item} onPress={handlePress} />
+        )}
+        renderSectionHeader={({ section: { category_name } }) => (
+          <View>
+            <Text>{category_name}</Text>
+          </View>
+        )}
         ListEmptyComponent={<Text>No products available.</Text>}
+        scrollEnabled
       />
     </SafeAreaView>
   );
