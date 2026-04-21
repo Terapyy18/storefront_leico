@@ -7,6 +7,7 @@ type UseFavoritesResult = {
   addFavorite: (productId: string) => Promise<void>;
   removeFavorite: (productId: string) => Promise<void>;
   isFavorited: (productId: string) => boolean;
+  refresh: () => Promise<void>;
 };
 
 export function useFavorites(userId: string | null): UseFavoritesResult {
@@ -46,27 +47,34 @@ export function useFavorites(userId: string | null): UseFavoritesResult {
   const addFavorite = useCallback(async (productId: string) => {
     if (!userId) return;
 
+    // Mise à jour optimiste : feedback immédiat
+    setFavorites((prev) =>
+      prev.includes(productId) ? prev : [...prev, productId]
+    );
+
     const { error } = await supabase
       .from('favorite')
       .insert({ user_id: userId, product_id: productId });
 
     if (error) {
-      // Code 23505 = violation de contrainte unique (déjà en favori) → pas un vrai crash
       if (error.code === '23505') {
+        // Déjà en favori côté serveur — état local déjà correct, rien à faire
         console.warn('[useFavorites] Produit déjà dans les favoris :', productId);
       } else {
+        // Rollback
         console.error('[useFavorites] Erreur lors de l\'ajout du favori :', error.message);
+        setFavorites((prev) => prev.filter((id) => id !== productId));
       }
-      return;
     }
-
-    await fetchFavorites();
-  }, [userId, fetchFavorites]);
+  }, [userId]);
 
   // ─── Remove ──────────────────────────────────────────────────────────────
 
   const removeFavorite = useCallback(async (productId: string) => {
     if (!userId) return;
+
+    // Mise à jour optimiste
+    setFavorites((prev) => prev.filter((id) => id !== productId));
 
     const { error } = await supabase
       .from('favorite')
@@ -75,12 +83,11 @@ export function useFavorites(userId: string | null): UseFavoritesResult {
       .eq('product_id', productId);
 
     if (error) {
+      // Rollback
       console.error('[useFavorites] Erreur lors de la suppression du favori :', error.message);
-      return;
+      setFavorites((prev) => [...prev, productId]);
     }
-
-    await fetchFavorites();
-  }, [userId, fetchFavorites]);
+  }, [userId]);
 
   // ─── isFavorited ─────────────────────────────────────────────────────────
 
@@ -89,5 +96,5 @@ export function useFavorites(userId: string | null): UseFavoritesResult {
     [favorites]
   );
 
-  return { favorites, loading, addFavorite, removeFavorite, isFavorited };
+  return { favorites, loading, addFavorite, removeFavorite, isFavorited, refresh: fetchFavorites };
 }

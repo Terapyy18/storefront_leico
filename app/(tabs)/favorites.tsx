@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -49,10 +49,17 @@ function FavoriteCard({
 export default function FavoritesScreen() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { favorites, loading: favLoading, removeFavorite } = useFavorites(user?.id ?? null);
+  const { favorites, loading: favLoading, removeFavorite, refresh } = useFavorites(user?.id ?? null);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
+
+  // Re-fetch favoris à chaque fois que l'onglet prend le focus
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   // Fetch les infos complètes des produits favoris quand la liste change
   useEffect(() => {
@@ -131,17 +138,19 @@ export default function FavoritesScreen() {
   // ── Liste des favoris ───────────────────────────────────────────────────────
 
   return (
-    <FlatList
-      data={products}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
-      renderItem={({ item }) => (
-        <FavoriteCard
-          product={item}
-          onRemove={() => removeFavorite(item.id)}
-        />
-      )}
-    />
+    <SafeAreaView style={{ flex: 1 }}>
+      <FlatList
+        data={products}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <FavoriteCard
+            product={item}
+            onRemove={() => removeFavorite(item.id)}
+          />
+        )}
+      />
+    </SafeAreaView>
   );
 }
 
