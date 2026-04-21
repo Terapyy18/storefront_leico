@@ -47,6 +47,7 @@ export default function TabLayout() {
         {/* Routes cachées */}
         <Tabs.Screen name="explore" options={{ href: null }} />
         <Tabs.Screen name="product/[id]" options={{ href: null }} />
+        <Tabs.Screen name="category/[id]" options={{ href: null }} />
       </Tabs>
 
       {/* Bouton panier flottant */}

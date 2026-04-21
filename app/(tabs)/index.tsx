@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
+  Pressable,
   SectionList,
   Text,
   View,
@@ -45,9 +46,19 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <ProductCard product={item} onPress={handlePress} />
         )}
-        renderSectionHeader={({ section: { category_name } }) => (
-          <View>
+        renderSectionHeader={({ section: { category_id, category_name } }) => (
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Text>{category_name}</Text>
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/category/[id]',
+                  params: { id: category_id, name: category_name },
+                })
+              }
+            >
+              <Text>View all →</Text>
+            </Pressable>
           </View>
         )}
         ListEmptyComponent={<Text>No products available.</Text>}
