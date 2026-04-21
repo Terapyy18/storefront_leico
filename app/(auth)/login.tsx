@@ -63,29 +63,34 @@ export default function LoginScreen() {
   const router = useRouter();
   const { signIn } = useAuth();
 
-  const [email, setEmail]       = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState<string | null>(null);
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin() {
     setError(null);
 
-    if (!email.trim())         { setError("L'email est requis."); return; }
-    if (!isValidEmail(email))  { setError("Format d'email invalide."); return; }
-    if (password.length < 6)   { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
+    if (!email.trim()) { setError('L\'email est requis.'); return; }
+    if (!isValidEmail(email)) { setError('Format d\'email invalide.'); return; }
+    if (password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractÃ¨res.'); return; }
 
     setLoading(true);
     const { error: authError } = await signIn(email.trim(), password);
     setLoading(false);
 
     if (authError) {
-      setError(translateError(authError.message));
+      setError(authError.message);
       return;
     }
 
-    router.canGoBack() ? router.back() : router.replace('/');
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   }
+
 
   return (
     <KeyboardAvoidingView

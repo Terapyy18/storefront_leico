@@ -1,17 +1,20 @@
 import { StyleSheet } from 'react-native';
 
 export const COLORS = {
-  background:  '#FAF7F2',  // sable chaud
-  card:        '#FFFFFF',
-  primary:     '#1C1C1A',  // quasi-noir chaud
-  accent:      '#C4714A',  // terracotta
-  sage:        '#2D4A3E',  // vert sauge (logo, liens)
-  muted:       '#A89880',  // sable moyen
-  border:      '#E8DDD0',  // beige bordure
-  inputBg:     '#FDFBF8',
-  error:       '#C0533A',
-  errorBg:     '#FEF3EE',
-  errorBorder: '#F0C4B0',
+  background:    '#FAF7F2',
+  card:          '#FFFFFF',
+  primary:       '#1C1C1A',
+  accent:        '#C4714A',  // terracotta
+  sage:          '#2D4A3E',  // vert sauge
+  muted:         '#A89880',
+  border:        '#E8DDD0',
+  inputBg:       '#FDFBF8',
+  error:         '#C0533A',
+  errorBg:       '#FEF3EE',
+  errorBorder:   '#F0C4B0',
+  successBg:     '#EAF3EE',
+  successBorder: '#A8D5BE',
+  success:       '#2D4A3E',
 };
 
 export const SPACING = {
@@ -160,17 +163,85 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ─── Lien inscription ────────────────────────────────────────────
-  signupRow: {
+  // ─── Lien connexion ──────────────────────────────────────────────
+  loginRow: {
     marginTop: SPACING.lg,
     alignItems: 'center',
   },
-  signupText: {
+  loginText: {
     fontSize: 14,
     color: COLORS.muted,
   },
-  signupLink: {
+  loginLink: {
     color: COLORS.sage,
+    fontWeight: '600',
+  },
+
+  // ─── Écran confirmation email ────────────────────────────────────
+  confirmRoot: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  confirmCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: 24,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    width: '100%',
+    maxWidth: 400,
+    alignItems: 'center',
+    gap: SPACING.md,
+    shadowColor: '#8B6F5C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  confirmIcon: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.successBg,
+    borderWidth: 1,
+    borderColor: COLORS.successBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmIconText: {
+    fontSize: 30,
+  },
+  confirmTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: COLORS.primary,
+    textAlign: 'center',
+  },
+  confirmText: {
+    fontSize: 14,
+    color: COLORS.muted,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  confirmEmail: {
+    fontWeight: '600',
+    color: COLORS.primary,
+  },
+  confirmBtn: {
+    backgroundColor: COLORS.accent,
+    borderRadius: 99,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: SPACING.sm,
+  },
+  confirmBtnText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
