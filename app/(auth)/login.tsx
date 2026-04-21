@@ -40,39 +40,52 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View>
-        <Text>Connexion</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1, backgroundColor: '#fff' }}
+    >
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}>
+        <Text style={{ fontSize: 26, fontWeight: '700', color: '#111', marginBottom: 8 }}>Connexion</Text>
 
-        {error && <Text>{error}</Text>}
+        {error && (
+          <Text style={{ color: '#c0392b', fontSize: 13 }}>{error}</Text>
+        )}
 
         <TextInput
           placeholder="Email"
+          placeholderTextColor="#999"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
           editable={!loading}
+          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
         />
 
         <TextInput
           placeholder="Mot de passe"
+          placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           editable={!loading}
+          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
         />
 
-        <Pressable onPress={handleLogin} disabled={loading}>
+        <Pressable
+          onPress={handleLogin}
+          disabled={loading}
+          style={{ backgroundColor: loading ? '#999' : '#111', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginTop: 4 }}
+        >
           {loading
-            ? <ActivityIndicator />
-            : <Text>Se connecter</Text>
+            ? <ActivityIndicator color="#fff" />
+            : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Se connecter</Text>
           }
         </Pressable>
 
-        <Pressable onPress={() => router.push('/signup')} disabled={loading}>
-          <Text>Pas encore de compte ? S'inscrire</Text>
+        <Pressable onPress={() => router.push('/signup')} disabled={loading} style={{ alignItems: 'center', paddingVertical: 8 }}>
+          <Text style={{ color: '#555', fontSize: 14 }}>Pas encore de compte ? <Text style={{ color: '#111', fontWeight: '600' }}>S'inscrire</Text></Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

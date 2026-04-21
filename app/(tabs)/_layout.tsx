@@ -44,10 +44,12 @@ export default function TabLayout() {
             ),
           }}
         />
-        {/* Routes cachées */}
+        {/* Routes cachées — accessibles via router.push() mais sans onglet */}
         <Tabs.Screen name="explore" options={{ href: null }} />
         <Tabs.Screen name="product/[id]" options={{ href: null }} />
         <Tabs.Screen name="category/[id]" options={{ href: null }} />
+        <Tabs.Screen name="checkout" options={{ href: null, title: 'Checkout' }} />
+        <Tabs.Screen name="order-confirmation" options={{ href: null, title: 'Order Confirmed' }} />
       </Tabs>
 
       {/* Bouton panier flottant */}
