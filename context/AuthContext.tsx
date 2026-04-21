@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useEffect, useState } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
+import { saveSession, getStoredSession, clearSession } from '@/utils/storage';
 import type { AuthContextType } from '@/types';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
@@ -12,21 +13,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Restaurer la session persistée au démarrage
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    let isMounted = true;
 
-    // 2. Écouter les changements d'état (login, logout, token refresh…)
+    const init = async () => {
+      // 1. Restauration instantanée depuis AsyncStorage
+      const stored = await getStoredSession();
+      if (isMounted && stored) {
+        setSession(stored);
+        setUser(stored.user);
+      }
+
+      // 2. Rafraîchissement en arrière-plan pour valider / renouveler le token
+      const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+      if (isMounted) {
+        setSession(refreshed);
+        setUser(refreshed?.user ?? null);
+        if (refreshed) {
+          await saveSession(refreshed);
+        } else {
+          await clearSession();
+        }
+      }
+
+      if (isMounted) setLoading(false);
+    };
+
+    init();
+
+    // 3. Écouter les changements d'état (login, logout, token refresh…)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      if (session) {
+        saveSession(session);
+      } else {
+        clearSession();
+      }
     });
 
     // Cleanup du listener au unmount
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
