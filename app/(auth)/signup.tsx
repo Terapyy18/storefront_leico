@@ -40,80 +40,58 @@ export default function SignupScreen() {
 
   if (emailSent) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#fff', gap: 16 }}>
-        <Text style={{ fontSize: 26, fontWeight: '700', color: '#111', textAlign: 'center' }}>Vérifiez votre email</Text>
-        <Text style={{ fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22 }}>
-          Un lien de confirmation a été envoyé à{' '}
-          <Text style={{ fontWeight: '600', color: '#111' }}>{email}</Text>.{' '}
-          Cliquez sur le lien pour activer votre compte, puis connectez-vous.
-        </Text>
-        <Pressable
-          onPress={() => router.push('/login')}
-          style={{ backgroundColor: '#111', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 }}
-        >
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Aller à la connexion</Text>
+      <View>
+        <Text>Vérifiez votre email</Text>
+        <Text>Un lien de confirmation a été envoyé à {email}. Cliquez sur le lien pour activer votre compte, puis connectez-vous.</Text>
+        <Pressable onPress={() => router.push('/login')}>
+          <Text>Aller à la connexion</Text>
         </Pressable>
       </View>
     );
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: '#fff' }}
-    >
-      <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 26, fontWeight: '700', color: '#111', marginBottom: 8 }}>Créer un compte</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View>
+        <Text>Créer un compte</Text>
 
-        {error && (
-          <Text style={{ color: '#c0392b', fontSize: 13 }}>{error}</Text>
-        )}
+        {error && <Text>{error}</Text>}
 
         <TextInput
           placeholder="Email"
-          placeholderTextColor="#999"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
           editable={!loading}
-          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
         />
 
         <TextInput
           placeholder="Mot de passe (min. 6 caractères)"
-          placeholderTextColor="#999"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
           editable={!loading}
-          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
         />
 
         <TextInput
           placeholder="Confirmer le mot de passe"
-          placeholderTextColor="#999"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
           editable={!loading}
-          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
         />
 
-        <Pressable
-          onPress={handleSignup}
-          disabled={loading}
-          style={{ backgroundColor: loading ? '#999' : '#111', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginTop: 4 }}
-        >
+        <Pressable onPress={handleSignup} disabled={loading}>
           {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>S'inscrire</Text>
+            ? <ActivityIndicator />
+            : <Text>S'inscrire</Text>
           }
         </Pressable>
 
-        <Pressable onPress={() => router.push('/login')} disabled={loading} style={{ alignItems: 'center', paddingVertical: 8 }}>
-          <Text style={{ color: '#555', fontSize: 14 }}>Déjà un compte ? <Text style={{ color: '#111', fontWeight: '600' }}>Se connecter</Text></Text>
+        <Pressable onPress={() => router.push('/login')} disabled={loading}>
+          <Text>Déjà un compte ? Se connecter</Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

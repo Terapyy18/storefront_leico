@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "app",
+    "scheme": "storefrontleico",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -19,20 +19,14 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.terapyy2.leico"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "https://leico.app"
-        }
-      ],
+      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -52,9 +46,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {
-        "origin": "https://leico.app"
-      },
+      "router": {},
       "eas": {
         "projectId": "a9147db8-2634-4a67-9302-e65fac69ed2e"
       }
