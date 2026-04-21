@@ -26,13 +26,11 @@ function RootNavigator() {
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    if (!user && !inAuthGroup) {
-      // Non connecté et hors du groupe auth → login
-      router.replace('/(auth)/login');
-    } else if (user && inAuthGroup) {
-      // Connecté et dans le groupe auth → tabs
+    // Connecté et encore sur un écran auth (ex: après login) → tabs
+    if (user && inAuthGroup) {
       router.replace('/(tabs)');
     }
+    // Non connecté → on laisse accéder aux tabs normalement (app publique)
   }, [user, loading, segments]);
 
   if (loading) {
