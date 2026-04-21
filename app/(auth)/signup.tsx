@@ -7,14 +7,6 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function translateError(message: string): string {
-  if (message.includes('User already registered')) return 'Un compte existe déjà avec cet email.';
-  if (message.includes('Password should be')) return 'Le mot de passe doit contenir au moins 6 caractères.';
-  if (message.includes('network')) return 'Erreur réseau. Vérifiez votre connexion.';
-  if (message.includes('Too many requests')) return 'Trop de tentatives. Réessayez dans quelques minutes.';
-  return message;
-}
-
 export default function SignupScreen() {
   const router = useRouter();
   const { signUp } = useAuth();
@@ -39,7 +31,7 @@ export default function SignupScreen() {
     setLoading(false);
 
     if (authError) {
-      setError(translateError(authError.message));
+      setError(authError.message);
       return;
     }
 
