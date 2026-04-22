@@ -1,11 +1,54 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../hooks/useAuth';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { COLORS, styles } from './style.signup';
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
+
+// ─── Sous-composants ────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  icon,
+  ...props
+}: {
+  label: string;
+  icon?: string;
+} & React.ComponentProps<typeof TextInput>) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <View style={styles.fieldWrap}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
+        {icon && <Text style={styles.inputIcon}>{icon}</Text>}
+        <TextInput
+          style={styles.input}
+          placeholderTextColor={COLORS.muted}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          {...props}
+        />
+      </View>
+    </View>
+  );
+}
+
+// ─── Écran principal ────────────────────────────────────────────────────────
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -37,85 +80,121 @@ export default function SignupScreen() {
 
     setEmailSent(true);
   }
-
+  // ─── Écran de confirmation ─────────────────────────────────────
   if (emailSent) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#fff', gap: 16 }}>
-        <Text style={{ fontSize: 26, fontWeight: '700', color: '#111', textAlign: 'center' }}>Vérifiez votre email</Text>
-        <Text style={{ fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22 }}>
-          Un lien de confirmation a été envoyé à{' '}
-          <Text style={{ fontWeight: '600', color: '#111' }}>{email}</Text>.{' '}
-          Cliquez sur le lien pour activer votre compte, puis connectez-vous.
-        </Text>
-        <Pressable
-          onPress={() => router.push('/login')}
-          style={{ backgroundColor: '#111', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 32, marginTop: 8 }}
-        >
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Aller à la connexion</Text>
-        </Pressable>
+      <View style={styles.confirmRoot}>
+        <View style={styles.confirmCard}>
+          <View style={styles.confirmIcon}>
+            <Text style={styles.confirmIconText}>✉</Text>
+          </View>
+          <Text style={styles.confirmTitle}>Vérifiez votre email</Text>
+          <Text style={styles.confirmText}>
+            Un lien de confirmation a été envoyé à{' '}
+            <Text style={styles.confirmEmail}>{email}</Text>.{'\n'}
+            Cliquez sur le lien pour activer votre compte, puis connectez-vous.
+          </Text>
+          <Pressable
+            style={styles.confirmBtn}
+            onPress={() => router.push('/login')}
+          >
+            <Text style={styles.confirmBtnText}>Aller à la connexion</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
+  // ─── Formulaire d'inscription ──────────────────────────────────
   return (
     <KeyboardAvoidingView
+      style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: '#fff' }}
     >
-      <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 12 }}>
-        <Text style={{ fontSize: 26, fontWeight: '700', color: '#111', marginBottom: 8 }}>Créer un compte</Text>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.card}>
 
-        {error && (
-          <Text style={{ color: '#c0392b', fontSize: 13 }}>{error}</Text>
-        )}
+          {/* En-tête */}
+          <View style={styles.header}>
+            <View style={styles.logo}>
+              <Text style={styles.logoText}>L</Text>
+            </View>
+            <Text style={styles.title}>Créer un compte</Text>
+            <Text style={styles.subtitle}>Rejoignez Leico en quelques secondes</Text>
+          </View>
 
-        <TextInput
-          placeholder="Email"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          editable={!loading}
-          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
-        />
+          {/* Erreur */}
+          {error && (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorIcon}>⚠</Text>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
 
-        <TextInput
-          placeholder="Mot de passe (min. 6 caractères)"
-          placeholderTextColor="#999"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
-        />
+          {/* Champs */}
+          <Field
+            label="Email"
+            icon="✉"
+            placeholder="vous@exemple.fr"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+          />
 
-        <TextInput
-          placeholder="Confirmer le mot de passe"
-          placeholderTextColor="#999"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry
-          editable={!loading}
-          style={{ borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 15, color: '#111', backgroundColor: '#fafafa' }}
-        />
+          <Field
+            label="Mot de passe"
+            icon="🔒"
+            placeholder="Min. 6 caractères"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+          />
 
-        <Pressable
-          onPress={handleSignup}
-          disabled={loading}
-          style={{ backgroundColor: loading ? '#999' : '#111', borderRadius: 8, paddingVertical: 14, alignItems: 'center', marginTop: 4 }}
-        >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>S&apos;inscrire</Text>
-          }
-        </Pressable>
+          <Field
+            label="Confirmer le mot de passe"
+            icon="🔒"
+            placeholder="Répétez le mot de passe"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            editable={!loading}
+          />
 
-        <Pressable onPress={() => router.push('/login')} disabled={loading} style={{ alignItems: 'center', paddingVertical: 8 }}>
-          <Text style={{ color: '#555', fontSize: 14 }}>Déjà un compte ? <Text style={{ color: '#111', fontWeight: '600' }}>Se connecter</Text></Text>
-        </Pressable>
-      </View>
+          {/* Bouton inscription */}
+          <Pressable
+            onPress={handleSignup}
+            disabled={loading}
+            style={({ pressed }) => [
+              styles.btn,
+              pressed  && styles.btnPressed,
+              loading  && styles.btnDisabled,
+            ]}
+          >
+            {loading
+              ? <ActivityIndicator color="#FFF" />
+              : <Text style={styles.btnText}>S&apos;inscrire</Text>
+            }
+          </Pressable>
+
+          {/* Lien connexion */}
+          <View style={styles.loginRow}>
+            <Pressable onPress={() => router.push('/login')} disabled={loading}>
+              <Text style={styles.loginText}>
+                Déjà un compte ?{' '}
+                <Text style={styles.loginLink}>Se connecter</Text>
+              </Text>
+            </Pressable>
+          </View>
+
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

@@ -1,118 +1,240 @@
-import React from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
-import { useOrders } from '@/hooks/useOrders';
-import OrderCard from '@/components/OrderCard';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { COLORS, styles } from './style.compte';
+
+
+// ─── Données fictives (à remplacer par un vrai fetch plus tard) ──────────────
+
+const FAKE_ORDERS = [
+  { ref: '#L-2847', date: '14 avril 2026',   amount: '89,00 €', status: 'Livré' },
+  { ref: '#L-2651', date: '02 mars 2026',    amount: '124,50 €', status: 'Livré' },
+  { ref: '#L-2490', date: '18 janvier 2026', amount: '47,00 €', status: 'Livré' },
+];
+
+// ─── Sous-composants ─────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  icon,
+  ...props
+}: {
+  label: string;
+  icon?: string;
+} & React.ComponentProps<typeof TextInput>) {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <View style={styles.fieldWrap}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={[styles.inputRow, focused && styles.inputRowFocused]}>
+        {icon && <Text style={styles.inputIcon}>{icon}</Text>}
+        <TextInput
+          style={styles.input}
+          placeholderTextColor={COLORS.muted}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          {...props}
+        />
+      </View>
+    </View>
+  );
+}
+
+// ─── Section : historique des commandes ──────────────────────────────────────
+
+function OrderHistory() {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Historique des commandes</Text>
+
+      {FAKE_ORDERS.length === 0 ? (
+        <Text style={styles.orderEmpty}>Aucune commande pour le moment.</Text>
+      ) : (
+        FAKE_ORDERS.map((order, i) => (
+          <View key={order.ref} style={[
+            styles.orderItem,
+            i === FAKE_ORDERS.length - 1 && { borderBottomWidth: 0 },
+          ]}>
+            <View style={styles.orderLeft}>
+              <Text style={styles.orderRef}>{order.ref}</Text>
+              <Text style={styles.orderDate}>{order.date}</Text>
+            </View>
+            <View style={styles.orderRight}>
+              <Text style={styles.orderAmount}>{order.amount}</Text>
+              <Text style={styles.orderBadge}>{order.status}</Text>
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
+// ─── Section : modifier l'email ───────────────────────────────────────────────
+
+function EditEmail({ currentEmail }: { currentEmail: string }) {
+  const [newEmail, setNewEmail] = useState('');
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Modifier l&apos;adresse email</Text>
+      <Field
+        label="Email actuel"
+        icon="✉"
+        value={currentEmail}
+        editable={false}
+      />
+      <Field
+        label="Nouvel email"
+        icon="✉"
+        placeholder="nouveau@exemple.fr"
+        value={newEmail}
+        onChangeText={setNewEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+      <Pressable
+        style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
+        onPress={() => { /* TODO: appel Supabase updateUser */ }}
+      >
+        <Text style={styles.btnPrimaryText}>Mettre à jour l&apos;email</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ─── Section : modifier le mot de passe ──────────────────────────────────────
+
+function EditPassword() {
+  const [newPassword, setNewPassword]         = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Modifier le mot de passe</Text>
+      <Field
+        label="Nouveau mot de passe"
+        icon="🔒"
+        placeholder="Min. 6 caractères"
+        value={newPassword}
+        onChangeText={setNewPassword}
+        secureTextEntry
+      />
+      <Field
+        label="Confirmer le mot de passe"
+        icon="🔒"
+        placeholder="Répétez le mot de passe"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+      />
+      <Pressable
+        style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
+        onPress={() => { /* TODO: appel Supabase updateUser */ }}
+      >
+        <Text style={styles.btnPrimaryText}>Mettre à jour le mot de passe</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ─── Écran principal ──────────────────────────────────────────────────────────
+
 
 export default function CompteScreen() {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
-  const { orders, loading: ordersLoading, error } = useOrders();
 
+
+  // ── Chargement ──────────────────────────────────────────────────
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+      <SafeAreaView style={styles.loadingRoot}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </SafeAreaView>
     );
   }
 
-  if (user) {
+  // ── Non connecté ─────────────────────────────────────────────────
+  if (!user) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-        <ScrollView contentContainerStyle={{ padding: 24, gap: 24 }}>
-          
-          {/* ── Section Profil ── */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ fontSize: 24, fontWeight: '700', color: '#111' }}>Profil</Text>
-            <Text style={{ fontSize: 16, color: '#555' }}>{user.email}</Text>
-            <Text style={{ fontSize: 14, color: '#888' }}>
-              Membre depuis le {new Date(user.created_at).toLocaleDateString('fr-FR')}
-            </Text>
-            <Pressable 
-              onPress={signOut}
-              style={({ pressed }) => ({
-                marginTop: 8,
-                paddingVertical: 12,
-                paddingHorizontal: 24,
-                backgroundColor: pressed ? '#f5d6d3' : '#fdecea',
-                borderRadius: 8,
-                alignSelf: 'flex-start'
-              })}
+      <SafeAreaView style={styles.guestRoot}>
+        <View style={styles.guestCard}>
+          <View style={styles.guestIcon}>
+            <Text style={styles.guestIconText}>👤</Text>
+          </View>
+          <Text style={styles.guestTitle}>Mon compte</Text>
+          <Text style={styles.guestSubtitle}>
+            Connectez-vous pour accéder à vos commandes, favoris et profil.
+          </Text>
+          <View style={styles.guestBtnRow}>
+            <Pressable
+              style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
+              onPress={() => router.push('/login')}
             >
-              <Text style={{ color: '#c0392b', fontWeight: '600' }}>Se déconnecter</Text>
+              <Text style={styles.btnPrimaryText}>Se connecter</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.btnDanger, pressed && styles.btnDangerPressed]}
+              onPress={() => router.push('/signup')}
+            >
+              <Text style={styles.btnDangerText}>Créer un compte</Text>
             </Pressable>
           </View>
-
-          {/* ── Section Commandes ── */}
-          <View style={{ gap: 12 }}>
-            <Text style={{ fontSize: 20, fontWeight: '700', color: '#111' }}>Mes commandes</Text>
-            
-            {ordersLoading ? (
-              <ActivityIndicator style={{ alignSelf: 'flex-start' }} />
-            ) : error ? (
-              <Text style={{ color: '#c0392b' }}>{error}</Text>
-            ) : orders.length === 0 ? (
-              <View style={{ backgroundColor: '#fafafa', padding: 16, borderRadius: 8, borderWidth: 1, borderColor: '#eee' }}>
-                <Text style={{ color: '#555', textAlign: 'center' }}>Vous n&apos;avez passé aucune commande pour le moment.</Text>
-              </View>
-            ) : (
-              orders.map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  onPress={(orderId) => {
-                    router.push({
-                      pathname: '/orders/[id]',
-                      params: { id: orderId }
-                    } as any);
-                  }} 
-                />
-              ))
-            )}
-          </View>
-
-        </ScrollView>
+        </View>
       </SafeAreaView>
     );
   }
 
-  // ── Non connecté ──
+  // ── Connecté ──────────────────────────────────────────────────────
+  const initials = user.email
+    ? user.email.slice(0, 2).toUpperCase()
+    : '?';
+
   return (
-    <SafeAreaView style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff', gap: 16 }}>
-      <Text style={{ fontSize: 26, fontWeight: '700', color: '#111', textAlign: 'center' }}>Mon compte</Text>
-      <Text style={{ fontSize: 15, color: '#555', textAlign: 'center', lineHeight: 22 }}>
-        Connectez-vous pour accéder à votre historique de commandes, vos favoris et gérer votre profil.
-      </Text>
-      
-      <View style={{ gap: 12, marginTop: 16 }}>
-        <Pressable 
-          onPress={() => router.push('/login')}
-          style={({ pressed }) => ({ 
-            backgroundColor: pressed ? '#333' : '#111', 
-            paddingVertical: 14, 
-            borderRadius: 8, 
-            alignItems: 'center' 
-          })}
+    <SafeAreaView style={styles.root}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+
+        {/* Profil */}
+        <View style={styles.profileCard}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </View>
+          <Text style={styles.profileEmail}>{user.email}</Text>
+          <Text style={styles.profileSince}>
+            Membre depuis {new Date(user.created_at).toLocaleDateString('fr-FR')}
+          </Text>
+        </View>
+
+        {/* Historique commandes */}
+        <OrderHistory />
+
+        {/* Modifier email */}
+        <EditEmail currentEmail={user.email ?? ''} />
+
+        {/* Modifier mot de passe */}
+        <EditPassword />
+
+        {/* Déconnexion */}
+        <Pressable
+          style={({ pressed }) => [styles.btnDanger, pressed && styles.btnDangerPressed]}
+          onPress={signOut}
         >
-          <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>Se connecter</Text>
+          <Text style={styles.btnDangerText}>Se déconnecter</Text>
         </Pressable>
-        <Pressable 
-          onPress={() => router.push('/signup')}
-          style={({ pressed }) => ({ 
-            borderWidth: 1, 
-            borderColor: '#ddd', 
-            paddingVertical: 14, 
-            borderRadius: 8, 
-            alignItems: 'center',
-            backgroundColor: pressed ? '#f9f9f9' : 'transparent'
-          })}
-        >
-          <Text style={{ color: '#111', fontSize: 15, fontWeight: '600' }}>Créer un compte</Text>
-        </Pressable>
-      </View>
+
+      </ScrollView>
     </SafeAreaView>
   );
 }
