@@ -1,227 +1,63 @@
-import { useProducts, type Product } from '@/hooks/useProducts';
+import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Pressable,
-  ScrollView,
+  FlatList,
   Text,
   useWindowDimensions,
   View,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, styles } from './style.index';
-
-// ─── IDs codés en dur pour les meilleures ventes ─────────────────────────────
-const BEST_SELLER_IDS = ['REMPLACE_PAR_ID_1', 'REMPLACE_PAR_ID_2'];
-
-// ─── Hero carousel auto + flèches ────────────────────────────────────────────
-
-function HeroCarousel({ products }: { products: Product[] }) {
-  const router   = useRouter();
-  const { width } = useWindowDimensions();
-  const heroHeight = width < 600 ? 280 : 420;
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  const scrollRef  = useRef<ScrollView>(null);
-  const timerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Défile vers un index donné
-  function goTo(index: number) {
-    const clamped = Math.max(0, Math.min(index, products.length - 1));
-    scrollRef.current?.scrollTo({ x: clamped * width, animated: true });
-    setActiveIndex(clamped);
-  }
-
-  // Auto-play : avance toutes les 3 secondes, boucle sur le premier
-  function startAutoPlay() {
-    timerRef.current = setInterval(() => {
-      setActiveIndex((prev) => {
-        const next = prev + 1 >= products.length ? 0 : prev + 1;
-        scrollRef.current?.scrollTo({ x: next * width, animated: true });
-        return next;
-      });
-    }, 3000);
-  }
-
-  function stopAutoPlay() {
-    if (timerRef.current) clearInterval(timerRef.current);
-  }
-
-  useEffect(() => {
-    if (products.length > 1) startAutoPlay();
-    return () => stopAutoPlay();
-  }, [products.length, width]);
-
-  function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const idx = Math.round(e.nativeEvent.contentOffset.x / width);
-    if (idx !== activeIndex) setActiveIndex(idx);
-  }
-
-  // Quand l'utilisateur touche le carousel, pause l'autoplay puis reprend
-  function onTouchStart() {
-    stopAutoPlay();
-  }
-  function onTouchEnd() {
-    if (products.length > 1) startAutoPlay();
-  }
-
-  return (
-    <View>
-      <View style={{ position: 'relative' }}>
-        <ScrollView
-          ref={scrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-          decelerationRate="fast"
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          onMomentumScrollEnd={onScroll}
-        >
-          {products.map((item) => (
-            <View key={item.id} style={{ width, height: heroHeight }}>
-              {item.image_url ? (
-                <Image
-                  source={{ uri: item.image_url }}
-                  style={{ width, height: heroHeight }}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[styles.heroImagePlaceholder, { width, height: heroHeight }]}>
-                  <Text style={styles.heroImagePlaceholderText}>🧥</Text>
-                </View>
-              )}
-
-              {/* Overlay infos */}
-              <View style={styles.heroOverlay}>
-                {item.category ? (
-                  <View style={styles.heroCategoryBadge}>
-                    <Text style={styles.heroCategoryText}>{item.category}</Text>
-                  </View>
-                ) : null}
-                <Text style={styles.heroName} numberOfLines={2}>{item.name}</Text>
-                <Text style={styles.heroPrice}>{item.price.toFixed(2)} €</Text>
-              </View>
-
-              {/* Bouton voir */}
-              <Pressable
-                style={styles.heroBtn}
-                onPress={() => router.push(`/(tabs)/product/${item.id}`)}
-              >
-                <Text style={styles.heroBtnText}>Voir le produit</Text>
-              </Pressable>
-            </View>
-          ))}
-        </ScrollView>
-
-        {/* Flèche gauche */}
-        {activeIndex > 0 && (
-          <Pressable
-            style={[styles.arrowBtn, styles.arrowLeft]}
-            onPress={() => { stopAutoPlay(); goTo(activeIndex - 1); }}
-          >
-            <Text style={styles.arrowText}>‹</Text>
-          </Pressable>
-        )}
-
-        {/* Flèche droite */}
-        {activeIndex < products.length - 1 && (
-          <Pressable
-            style={[styles.arrowBtn, styles.arrowRight]}
-            onPress={() => { stopAutoPlay(); goTo(activeIndex + 1); }}
-          >
-            <Text style={styles.arrowText}>›</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {/* Dots */}
-      {products.length > 1 && (
-        <View style={styles.dotsRow}>
-          {products.map((_, i) => (
-            <Pressable key={i} onPress={() => { stopAutoPlay(); goTo(i); }}>
-              <View style={[styles.dot, i === activeIndex && styles.dotActive]} />
-            </Pressable>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ─── Card meilleure vente ─────────────────────────────────────────────────────
-
-function BestSellerCard({ product }: { product: Product }) {
-  const router = useRouter();
-
-  return (
-    <Pressable
-      style={styles.bestSellerCard}
-      onPress={() => router.push(`/(tabs)/product/${product.id}`)}
-    >
-      {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          style={styles.bestSellerImage}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={styles.bestSellerImagePlaceholder}>
-          <Text style={styles.bestSellerImagePlaceholderText}>🧥</Text>
-        </View>
-      )}
-      <View style={styles.bestSellerBody}>
-        <View>
-          <View style={styles.bestSellerBadge}>
-            <Text style={styles.bestSellerBadgeText}>⭐ Meilleure vente</Text>
-          </View>
-          <Text style={styles.bestSellerName} numberOfLines={2}>
-            {product.name}
-          </Text>
-          {product.description ? (
-            <Text style={styles.bestSellerDescription} numberOfLines={3}>
-              {product.description}
-            </Text>
-          ) : null}
-        </View>
-        <View style={styles.bestSellerFooter}>
-          <Text style={styles.bestSellerPrice}>
-            {product.price.toFixed(2)} €
-          </Text>
-          <View style={styles.bestSellerBtn}>
-            <Text style={styles.bestSellerBtnText}>Voir</Text>
-          </View>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-// ─── Écran principal ──────────────────────────────────────────────────────────
+import { Ionicons } from '@expo/vector-icons';
+import { useProductsByCategory } from '@/hooks/useProductsByCategory';
+import ProductCard from '@/components/ProductCard';
+import { CartButton } from '@/components/CartButton';
+import { CartModal } from '@/components/CartModal';
 
 export default function HomeScreen() {
-  const { products, loading, error } = useProducts();
+  const router = useRouter();
+  const { sections, loading, error } = useProductsByCategory();
+
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [cartModalVisible, setCartModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredSections = useMemo(() => {
+    if (!searchQuery.trim()) return sections;
+    const lowerQuery = searchQuery.toLowerCase();
+    
+    return sections.map(section => ({
+      ...section,
+      data: section.data.filter(product => 
+        product.name.toLowerCase().includes(lowerQuery) || 
+        (product.description && product.description.toLowerCase().includes(lowerQuery))
+      )
+    })).filter(section => section.data.length > 0);
+  }, [sections, searchQuery]);
+
+  const handlePress = useCallback(
+    (id: string) => router.push(`/(tabs)/product/${id}`),
+    [router]
+  );
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
-        <Text style={styles.loadingText}>Chargement des produits…</Text>
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+        <Text>Loading categories...</Text>
       </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.errorTitle}>Impossible de charger les produits</Text>
-        <Text style={styles.errorText}>{error}</Text>
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Failed to load</Text>
+        <Text>{error}</Text>
       </SafeAreaView>
     );
   }
@@ -245,42 +81,112 @@ export default function HomeScreen() {
     : products.slice(0, 2);
 
   return (
-    <SafeAreaView style={styles.root}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+      {/* Header */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff' }}>
+        <Pressable onPress={() => setModalVisible(true)}>
+          <Ionicons name="menu" size={28} color="#333" />
+        </Pressable>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#333', letterSpacing: 1 }}>Leico</Text>
+        <CartButton onPress={() => setCartModalVisible(true)} />
+      </View>
+
+      {/* Search Bar */}
+      <View style={{ paddingHorizontal: 16, paddingBottom: 16, backgroundColor: '#fff' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0f0f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <Ionicons name="search" size={20} color="#999" />
+          <TextInput
+            style={{ flex: 1, marginLeft: 8, fontSize: 16, color: '#333' }}
+            placeholder="Rechercher un produit..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      </View>
+
+      {/* Modal Menu */}
+      <Modal
+        visible={isModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setModalVisible(false)}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>Leico</Text>
-            <Text style={styles.headerSub}>Découvrez notre collection</Text>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', flexDirection: 'row' }}>
+          <View style={{ width: '75%', backgroundColor: '#fff', padding: 20, paddingTop: 60 }}>
+            <Pressable onPress={() => setModalVisible(false)} style={{ alignSelf: 'flex-end', marginBottom: 20 }}>
+              <Ionicons name="close" size={28} color="#333" />
+            </Pressable>
+            
+            <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 20 }}>Menu</Text>
+            
+            <Pressable onPress={() => { setModalVisible(false); }} style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+              <Text style={{ fontSize: 18 }}>Products</Text>
+            </Pressable>
+            
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginTop: 24, marginBottom: 12, color: '#666' }}>Categories</Text>
+            <FlatList
+              data={sections}
+              keyExtractor={(s) => s.category_id}
+              renderItem={({ item: section }) => (
+                <Pressable 
+                  onPress={() => {
+                    setModalVisible(false);
+                    router.push({
+                      pathname: '/(tabs)/category/[id]',
+                      params: { id: section.category_id, name: section.category_name },
+                    });
+                  }}
+                  style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
+                >
+                  <Text style={{ fontSize: 16 }}>{section.category_name}</Text>
+                </Pressable>
+              )}
+            />
           </View>
-          <View style={styles.headerLogo}>
-            <Text style={styles.headerLogoText}>L</Text>
-          </View>
+          <Pressable style={{ flex: 1 }} onPress={() => setModalVisible(false)} />
         </View>
+      </Modal>
 
-        {/* Hero carousel */}
-        {heroProducts.length === 0 ? (
-          <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>Aucun produit disponible.</Text>
+      <FlatList
+        data={filteredSections}
+        keyExtractor={(section) => section.category_id}
+        renderItem={({ item: section }) => (
+          <View style={{ marginBottom: 24 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{section.category_name}</Text>
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tabs)/category/[id]',
+                    params: { id: section.category_id, name: section.category_name },
+                  })
+                }
+              >
+                <Text style={{ color: '#007AFF', fontWeight: '500' }}>View all →</Text>
+              </Pressable>
+            </View>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16 }}
+              data={section.data}
+              keyExtractor={(product) => product.id}
+              renderItem={({ item: product }) => (
+                <View style={{ width: 160, marginRight: 16 }}>
+                  <ProductCard product={product} onPress={handlePress} />
+                </View>
+              )}
+            />
           </View>
-        ) : (
-          <HeroCarousel products={heroProducts} />
         )}
+        ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 20 }}>No products available.</Text>}
+        contentContainerStyle={{ paddingVertical: 16 }}
+      />
 
-        {/* Meilleures ventes */}
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Meilleures ventes</Text>
-        </View>
-
-        {bestSellersToShow.map((product) => (
-          <BestSellerCard key={product.id} product={product} />
-        ))}
-
-      </ScrollView>
+      <CartModal
+        visible={cartModalVisible}
+        onClose={() => setCartModalVisible(false)}
+      />
     </SafeAreaView>
   );
 }

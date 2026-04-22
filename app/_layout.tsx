@@ -1,8 +1,8 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-import { ActivityIndicator, View } from 'react-native';
 import { useEffect } from 'react';
+import { ActivityIndicator, View } from 'react-native';
+import 'react-native-reanimated';
 
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
@@ -26,14 +26,12 @@ function RootNavigator() {
 
     const inAuthGroup = segments[0] === '(auth)';
 
-    if (!user && !inAuthGroup) {
-      // Non connecté et hors du groupe auth → login
-      router.replace('/(auth)/login');
-    } else if (user && inAuthGroup) {
-      // Connecté et dans le groupe auth → tabs
+    // Connecté et encore sur un écran auth (ex: après login) → tabs
+    if (user && inAuthGroup) {
       router.replace('/(tabs)');
     }
-  }, [user, loading, segments]);
+    // Non connecté → on laisse accéder aux tabs normalement (app publique)
+  }, [user, loading, segments, router]);
 
   if (loading) {
     return (
@@ -48,6 +46,10 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+      <Stack.Screen
+        name="orders/[id]"
+        options={{ presentation: 'modal', headerShown: false, title: 'Order Details' }}
+      />
       <Stack.Screen
         name="modal"
         options={{ presentation: 'modal', headerShown: true, title: 'Modal' }}

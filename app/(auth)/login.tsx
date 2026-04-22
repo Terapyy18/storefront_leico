@@ -15,14 +15,7 @@ import { COLORS, styles } from './login.style';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
-function translateError(message: string): string {
-  if (message.includes('Invalid login credentials')) return 'Email ou mot de passe incorrect.';
-  if (message.includes('Email not confirmed'))        return 'Confirmez votre email avant de vous connecter.';
-  if (message.includes('Too many requests'))          return 'Trop de tentatives. Réessayez dans quelques minutes.';
-  if (message.includes('User not found'))             return 'Aucun compte trouvé avec cet email.';
-  if (message.includes('network'))                    return 'Erreur réseau. Vérifiez votre connexion.';
-  return message;
-}
+
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -164,7 +157,7 @@ export default function LoginScreen() {
             <Pressable onPress={() => router.push('/signup')} disabled={loading}>
               <Text style={styles.signupText}>
                 Pas encore de compte ?{' '}
-                <Text style={styles.signupLink}>S'inscrire</Text>
+                <Text style={styles.signupLink}>S&apos;inscrire</Text>
               </Text>
             </Pressable>
           </View>

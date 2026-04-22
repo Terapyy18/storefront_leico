@@ -106,10 +106,25 @@ export default function ProductDetailScreen() {
       Alert.alert('Connexion requise', 'Connectez-vous pour ajouter aux favoris.');
       return;
     }
-    favorited ? removeFavorite(product.id) : addFavorite(product.id);
+    if (favorited) {
+      removeFavorite(product.id);
+    } else {
+      addFavorite(product.id);
+    }
   };
 
   const handleAddToCart = () => {
+    if (!user) {
+      Alert.alert(
+        'Sign in required',
+        'Please sign in to add items to your cart.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
+        ]
+      );
+      return;
+    }
     const variant = variants[0];
     if (!variant) {
       Alert.alert('Indisponible', 'Aucune variante disponible pour ce produit.');
