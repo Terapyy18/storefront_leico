@@ -1,10 +1,12 @@
 import { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
   FlatList,
   Text,
+  useWindowDimensions,
   View,
   Modal,
   TextInput,
@@ -59,6 +61,24 @@ export default function HomeScreen() {
       </SafeAreaView>
     );
   }
+
+  // Un produit par catégorie pour le hero carousel
+  const heroProducts = Object.values(
+    products.reduce<Record<string, Product>>((acc, p) => {
+      const cat = p.category ?? 'Autre';
+      if (!acc[cat]) acc[cat] = p;
+      return acc;
+    }, {})
+  );
+
+  // Meilleures ventes
+  const bestSellers = BEST_SELLER_IDS
+    .map((id) => products.find((p) => p.id === id))
+    .filter((p): p is Product => Boolean(p));
+
+  const bestSellersToShow = bestSellers.length > 0
+    ? bestSellers
+    : products.slice(0, 2);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
