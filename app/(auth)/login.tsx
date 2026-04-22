@@ -85,7 +85,7 @@ export default function LoginScreen() {
         </Pressable>
 
         <Pressable onPress={() => router.push('/signup')} disabled={loading} style={{ alignItems: 'center', paddingVertical: 8 }}>
-          <Text style={{ color: '#555', fontSize: 14 }}>Pas encore de compte ? <Text style={{ color: '#111', fontWeight: '600' }}>S'inscrire</Text></Text>
+          <Text style={{ color: '#555', fontSize: 14 }}>Pas encore de compte ? <Text style={{ color: '#111', fontWeight: '600' }}>S&apos;inscrire</Text></Text>
         </Pressable>
       </View>
     </KeyboardAvoidingView>

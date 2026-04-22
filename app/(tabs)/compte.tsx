@@ -56,7 +56,7 @@ export default function CompteScreen() {
               <Text style={{ color: '#c0392b' }}>{error}</Text>
             ) : orders.length === 0 ? (
               <View style={{ backgroundColor: '#fafafa', padding: 16, borderRadius: 8, borderWidth: 1, borderColor: '#eee' }}>
-                <Text style={{ color: '#555', textAlign: 'center' }}>Vous n'avez passé aucune commande pour le moment.</Text>
+                <Text style={{ color: '#555', textAlign: 'center' }}>Vous n&apos;avez passé aucune commande pour le moment.</Text>
               </View>
             ) : (
               orders.map((order) => (

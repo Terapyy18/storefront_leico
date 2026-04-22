@@ -108,7 +108,7 @@ export default function SignupScreen() {
         >
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>S'inscrire</Text>
+            : <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>S&apos;inscrire</Text>
           }
         </Pressable>
 

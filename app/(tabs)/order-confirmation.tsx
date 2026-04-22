@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, Text, Pressable, View } from 'react-native';
+import { ScrollView, Text, Pressable } from 'react-native';
 
 export default function OrderConfirmation() {
   const { orderId } = useLocalSearchParams();

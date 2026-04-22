@@ -31,7 +31,7 @@ function RootNavigator() {
       router.replace('/(tabs)');
     }
     // Non connecté → on laisse accéder aux tabs normalement (app publique)
-  }, [user, loading, segments]);
+  }, [user, loading, segments, router]);
 
   if (loading) {
     return (

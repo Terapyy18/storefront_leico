@@ -100,7 +100,11 @@ export default function ProductDetailScreen() {
       Alert.alert('Sign in', 'Please sign in to add favorites');
       return;
     }
-    favorited ? removeFavorite(product.id) : addFavorite(product.id);
+    if (favorited) {
+      removeFavorite(product.id);
+    } else {
+      addFavorite(product.id);
+    }
   };
 
   const handleAddToCart = () => {
