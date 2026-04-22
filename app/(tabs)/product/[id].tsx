@@ -12,10 +12,9 @@ import {
   Pressable,
   ScrollView,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, styles } from './style.product';
 
 type ProductVariant = {
@@ -29,8 +28,6 @@ type ProductVariant = {
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { width } = useWindowDimensions();
-  const isWide = width >= 640;
 
   const { user } = useAuth();
   const { addItem } = useCart();
@@ -38,6 +35,7 @@ export default function ProductDetailScreen() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -54,7 +52,6 @@ export default function ProductDetailScreen() {
         .single();
 
       if (productError || !productData) {
-        console.error('[ProductDetail] Produit introuvable :', productError?.message);
         setNotFound(true);
         setLoading(false);
         return;
@@ -67,10 +64,15 @@ export default function ProductDetailScreen() {
         .select('*')
         .eq('product_id', id);
 
-      if (variantError) {
-        console.error('[ProductDetail] Erreur variantes :', variantError.message);
-      } else {
-        setVariants((variantData ?? []) as ProductVariant[]);
+      if (!variantError && variantData) {
+        const sortedVariants = (variantData as ProductVariant[]).sort((a, b) => a.size?.localeCompare(b.size || '') || 0);
+        setVariants(sortedVariants);
+        const available = sortedVariants.find(v => v.stock > 0);
+        if (available) {
+          setSelectedVariantId(available.id);
+        } else if (sortedVariants.length > 0) {
+          setSelectedVariantId(sortedVariants[0].id);
+        }
       }
 
       setLoading(false);
@@ -78,24 +80,22 @@ export default function ProductDetailScreen() {
     fetchData();
   }, [id]);
 
-  // ── Loading ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" color={COLORS.accent} />
-      </SafeAreaView>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
     );
   }
 
-  // ── Not found ────────────────────────────────────────────────────
   if (notFound || !product) {
     return (
-      <SafeAreaView style={styles.centered}>
+      <View style={styles.centered}>
         <Text style={styles.notFoundText}>Produit introuvable</Text>
         <Pressable onPress={() => router.back()}>
           <Text style={styles.backLink}>← Retour</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -115,19 +115,15 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (!user) {
-      Alert.alert(
-        'Sign in required',
-        'Please sign in to add items to your cart.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Sign In', onPress: () => router.push('/(auth)/login') },
-        ]
-      );
+      Alert.alert('Connexion requise', 'Connectez-vous pour ajouter au panier.', [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Connexion', onPress: () => router.push('/(auth)/login') },
+      ]);
       return;
     }
-    const variant = variants[0];
-    if (!variant) {
-      Alert.alert('Indisponible', 'Aucune variante disponible pour ce produit.');
+    const variant = variants.find(v => v.id === selectedVariantId) || variants[0];
+    if (!variant || variant.stock <= 0) {
+      Alert.alert('Indisponible', 'Ce produit est épuisé dans cette taille.');
       return;
     }
     addItem({
@@ -139,133 +135,14 @@ export default function ProductDetailScreen() {
       size: variant.size ?? undefined,
       color: variant.color ?? undefined,
     });
-    Alert.alert('Ajouté au panier !');
+    Alert.alert('Succès', 'Ajouté au panier !');
   };
 
-  // ── Taille des panneaux selon la largeur ─────────────────────────
-  const imagePaneWidth  = isWide ? width * 0.48 : width;
-  const imagePaneHeight = isWide ? '100%'        : 300;
-
-  // ── Rendu ────────────────────────────────────────────────────────
-  const InfoPanel = (
-    <View style={[styles.infoPane, isWide ? { flex: 1 } : {}]}>
-      <ScrollView
-        contentContainerStyle={styles.infoScroll}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.infoCard}>
-
-          {/* Catégorie + nom + prix */}
-          {product.category ? (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>{product.category}</Text>
-            </View>
-          ) : null}
-
-          <Text style={styles.productName}>{product.name}</Text>
-          <Text style={styles.productPrice}>{product.price.toFixed(2)} €</Text>
-
-          <View style={styles.divider} />
-
-          {/* Description */}
-          {product.description ? (
-            <View>
-              <Text style={styles.descriptionLabel}>Description</Text>
-              <Text style={styles.descriptionText}>{product.description}</Text>
-            </View>
-          ) : null}
-
-          {/* Variantes / tailles */}
-          {variants.length > 0 ? (
-            <View>
-              <Text style={styles.variantsLabel}>Tailles & couleurs</Text>
-              <View style={styles.variantsGrid}>
-                {variants.map((v) => {
-                  const outOfStock = v.stock === 0;
-                  return (
-                    <View
-                      key={v.id}
-                      style={[
-                        styles.variantChip,
-                        outOfStock && styles.variantChipOutOfStock,
-                      ]}
-                    >
-                      {v.size ? (
-                        <Text
-                          style={[
-                            styles.variantChipText,
-                            outOfStock && styles.variantChipTextOutOfStock,
-                          ]}
-                        >
-                          {v.size}
-                        </Text>
-                      ) : null}
-                      {v.color ? (
-                        <Text style={styles.variantColor}>{v.color}</Text>
-                      ) : null}
-                      <Text style={styles.variantStock}>
-                        {outOfStock ? 'Épuisé' : `Stock : ${v.stock}`}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-          ) : null}
-
-          <View style={styles.divider} />
-
-          {/* Quantité */}
-          <View>
-            <Text style={styles.quantityLabel}>Quantité</Text>
-            <View style={styles.quantityRow}>
-              <Pressable
-                style={styles.quantityBtn}
-                onPress={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                <Text style={styles.quantityBtnText}>−</Text>
-              </Pressable>
-              <Text style={styles.quantityValue}>{quantity}</Text>
-              <Pressable
-                style={styles.quantityBtn}
-                onPress={() => setQuantity((q) => q + 1)}
-              >
-                <Text style={styles.quantityBtnText}>+</Text>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Boutons */}
-          <View style={styles.actionsRow}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.btnCart,
-                pressed && styles.btnCartPressed,
-              ]}
-              onPress={handleAddToCart}
-            >
-              <Text style={styles.btnCartText}>Ajouter au panier</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.btnFav, favorited && styles.btnFavActive]}
-              onPress={handleFavoritePress}
-            >
-              <Text style={styles.btnFavText}>{favorited ? '♥' : '♡'}</Text>
-            </Pressable>
-          </View>
-
-        </View>
-      </ScrollView>
-    </View>
-  );
-
-  if (isWide) {
-    // ── Layout large : image gauche, infos droite ──────────────────
-    return (
-      <SafeAreaView style={[styles.root, styles.row]}>
-
-        {/* Panneau image */}
-        <View style={[styles.imagePane, { width: imagePaneWidth }]}>
+  return (
+    <View style={styles.root}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Image Container */}
+        <View style={styles.imageContainer}>
           {product.image_url ? (
             <Image
               source={{ uri: product.image_url }}
@@ -274,46 +151,109 @@ export default function ProductDetailScreen() {
             />
           ) : (
             <View style={styles.imagePlaceholder}>
-              <Text style={styles.imagePlaceholderText}>🧥</Text>
+              <Ionicons name="image-outline" size={64} color={COLORS.muted} />
             </View>
           )}
+          
           <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>←</Text>
+            <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
           </Pressable>
         </View>
 
-        {/* Panneau infos */}
-        {InfoPanel}
-
-      </SafeAreaView>
-    );
-  }
-
-  // ── Layout mobile : image haut, infos bas ──────────────────────────
-  return (
-    <SafeAreaView style={styles.root}>
-
-      {/* Image */}
-      <View style={[styles.imagePane, { width: imagePaneWidth, height: imagePaneHeight as number }]}>
-        {product.image_url ? (
-          <Image
-            source={{ uri: product.image_url }}
-            style={styles.productImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.imagePlaceholder}>
-            <Text style={styles.imagePlaceholderText}>🧥</Text>
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          {product.category && (
+            <Text style={styles.categoryText}>{product.category}</Text>
+          )}
+          
+          <View style={styles.titleRow}>
+            <Text style={styles.productName}>{product.name}</Text>
+            <Text style={styles.productPrice}>{product.price.toFixed(2)} €</Text>
           </View>
-        )}
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>←</Text>
+
+          {/* Variants */}
+          {variants.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Taille</Text>
+              <View style={styles.variantsGrid}>
+                {variants.map((v) => {
+                  const outOfStock = v.stock === 0;
+                  const selected = v.id === selectedVariantId;
+                  return (
+                    <Pressable
+                      key={v.id}
+                      onPress={() => {
+                        if (!outOfStock) setSelectedVariantId(v.id);
+                      }}
+                      style={[
+                        styles.variantChip,
+                        selected && styles.variantChipSelected,
+                        outOfStock && styles.variantChipOutOfStock,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.variantChipText,
+                          selected && styles.variantChipTextSelected,
+                        ]}
+                      >
+                        {v.size || v.color || 'Unique'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Quantity */}
+          <Text style={styles.sectionTitle}>Quantité</Text>
+          <View style={styles.quantityRow}>
+            <Pressable
+              style={styles.quantityBtn}
+              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+            >
+              <Ionicons name="remove" size={20} color={COLORS.primary} />
+            </Pressable>
+            <Text style={styles.quantityValue}>{quantity}</Text>
+            <Pressable
+              style={styles.quantityBtn}
+              onPress={() => setQuantity((q) => q + 1)}
+            >
+              <Ionicons name="add" size={20} color={COLORS.primary} />
+            </Pressable>
+          </View>
+
+          {/* Description */}
+          {product.description && (
+            <View>
+              <Text style={styles.sectionTitle}>Description</Text>
+              <Text style={styles.descriptionText}>{product.description}</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Sticky Footer */}
+      <View style={styles.footer}>
+        <Pressable
+          style={styles.btnFav}
+          onPress={handleFavoritePress}
+        >
+          <Ionicons 
+            name={favorited ? "heart" : "heart-outline"} 
+            size={26} 
+            color={favorited ? COLORS.error : COLORS.primary} 
+          />
+        </Pressable>
+        
+        <Pressable
+          style={styles.btnCart}
+          onPress={handleAddToCart}
+        >
+          <Text style={styles.btnCartText}>Ajouter au panier</Text>
         </Pressable>
       </View>
-
-      {/* Infos */}
-      {InfoPanel}
-
-    </SafeAreaView>
+    </View>
   );
 }

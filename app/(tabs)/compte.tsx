@@ -13,13 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, styles } from './style.compte';
 
 
-// ─── Données fictives (à remplacer par un vrai fetch plus tard) ──────────────
-
-const FAKE_ORDERS = [
-  { ref: '#L-2847', date: '14 avril 2026',   amount: '89,00 €', status: 'Livré' },
-  { ref: '#L-2651', date: '02 mars 2026',    amount: '124,50 €', status: 'Livré' },
-  { ref: '#L-2490', date: '18 janvier 2026', amount: '47,00 €', status: 'Livré' },
-];
+import { useOrders } from '@/hooks/useOrders';
 
 // ─── Sous-composants ─────────────────────────────────────────────────────────
 
@@ -53,28 +47,71 @@ function Field({
 // ─── Section : historique des commandes ──────────────────────────────────────
 
 function OrderHistory() {
+  const { orders, loading, error } = useOrders();
+  const router = useRouter();
+
+  if (loading) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Historique des commandes</Text>
+        <ActivityIndicator size="small" color={COLORS.primary} style={{ marginTop: 10 }} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Historique des commandes</Text>
+        <Text style={styles.orderEmpty}>Impossible de charger les commandes.</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Historique des commandes</Text>
 
-      {FAKE_ORDERS.length === 0 ? (
+      {orders.length === 0 ? (
         <Text style={styles.orderEmpty}>Aucune commande pour le moment.</Text>
       ) : (
-        FAKE_ORDERS.map((order, i) => (
-          <View key={order.ref} style={[
-            styles.orderItem,
-            i === FAKE_ORDERS.length - 1 && { borderBottomWidth: 0 },
-          ]}>
-            <View style={styles.orderLeft}>
-              <Text style={styles.orderRef}>{order.ref}</Text>
-              <Text style={styles.orderDate}>{order.date}</Text>
-            </View>
-            <View style={styles.orderRight}>
-              <Text style={styles.orderAmount}>{order.amount}</Text>
-              <Text style={styles.orderBadge}>{order.status}</Text>
-            </View>
-          </View>
-        ))
+        orders.map((order, i) => {
+          // Format date and ref
+          const dateStr = new Date(order.created_at).toLocaleDateString('fr-FR', {
+            day: 'numeric', month: 'long', year: 'numeric'
+          });
+          const refStr = `#${order.id.split('-')[0].toUpperCase()}`;
+          
+          // Format status
+          const statusMap: Record<string, string> = {
+            'pending': 'En cours',
+            'completed': 'Livré',
+            'shipped': 'Expédié',
+            'cancelled': 'Annulé'
+          };
+          const displayStatus = statusMap[order.status] || order.status;
+
+          return (
+            <Pressable 
+              key={order.id} 
+              style={({ pressed }) => [
+                styles.orderItem,
+                i === orders.length - 1 && { borderBottomWidth: 0 },
+                pressed && { opacity: 0.6 }
+              ]}
+              onPress={() => router.push(`/orders/${order.id}`)}
+            >
+              <View style={styles.orderLeft}>
+                <Text style={styles.orderRef}>{refStr}</Text>
+                <Text style={styles.orderDate}>{dateStr}</Text>
+              </View>
+              <View style={styles.orderRight}>
+                <Text style={styles.orderAmount}>{order.total_amount.toFixed(2)} €</Text>
+                <Text style={styles.orderBadge}>{displayStatus}</Text>
+              </View>
+            </Pressable>
+          );
+        })
       )}
     </View>
   );

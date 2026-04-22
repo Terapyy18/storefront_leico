@@ -1,20 +1,16 @@
 import { StyleSheet } from 'react-native';
 
 export const COLORS = {
-  background:   '#FAF7F2',
+  background:   '#FFFFFF',
   card:         '#FFFFFF',
-  primary:      '#1C1C1A',
-  accent:       '#C4714A',  // terracotta
-  sage:         '#2D4A3E',  // vert sauge
-  sageBg:       '#EAF3EE',
-  sageBorder:   '#A8D5BE',
-  muted:        '#A89880',
-  border:       '#E8DDD0',
-  inputBg:      '#FDFBF8',
-  error:        '#C0533A',
-  errorBg:      '#FEF3EE',
-  outOfStock:   '#E8DDD0',
-  outOfStockText:'#A89880',
+  primary:      '#000000',
+  accent:       '#000000',
+  muted:        '#888888',
+  border:       '#EEEEEE',
+  lightBg:      '#F9F9F9',
+  error:        '#D32F2F',
+  outOfStock:   '#F5F5F5',
+  outOfStockText:'#AAAAAA',
 };
 
 export const SPACING = {
@@ -26,48 +22,32 @@ export const SPACING = {
 };
 
 export const styles = StyleSheet.create({
-
-  // ─── Layout ─────────────────────────────────────────────────────
   root: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-
-  // ─── Loading / Not found ─────────────────────────────────────────
   centered: {
     flex: 1,
-    backgroundColor: COLORS.background,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: SPACING.sm,
+    backgroundColor: COLORS.background,
   },
   notFoundText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: COLORS.primary,
+    marginBottom: SPACING.sm,
   },
   backLink: {
-    fontSize: 14,
-    color: COLORS.accent,
-    fontWeight: '500',
+    fontSize: 16,
+    color: COLORS.muted,
   },
-
-  // ─── Layout principal (responsive) ──────────────────────────────
-  // Utilisé dynamiquement dans le composant avec useWindowDimensions
-  row: {
-    flexDirection: 'row',
-    flex: 1,
-  },
-  column: {
-    flexDirection: 'column',
-    flex: 1,
-  },
-
-  // ─── Panneau image (gauche) ──────────────────────────────────────
-  imagePane: {
-    backgroundColor: '#F0EAE0',
-    justifyContent: 'center',
-    alignItems: 'center',
+  
+  // Image
+  imageContainer: {
+    width: '100%',
+    height: 450,
+    backgroundColor: COLORS.lightBg,
     position: 'relative',
   },
   productImage: {
@@ -79,104 +59,76 @@ export const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F0EAE0',
-  },
-  imagePlaceholderText: {
-    fontSize: 64,
-    color: COLORS.muted,
+    backgroundColor: COLORS.lightBg,
   },
   backBtn: {
     position: 'absolute',
-    top: SPACING.md,
+    top: 50,
     left: SPACING.md,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(250,247,242,0.9)',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  backBtnText: {
-    fontSize: 18,
-    color: COLORS.primary,
-  },
-
-  // ─── Panneau infos (droite) ──────────────────────────────────────
-  infoPane: {
-    backgroundColor: COLORS.background,
-  },
-  infoScroll: {
-    padding: SPACING.lg,
-    gap: SPACING.md,
-  },
-  infoCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 20,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: SPACING.md,
-    shadowColor: '#8B6F5C',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 10,
   },
-
-  // ─── Infos produit ───────────────────────────────────────────────
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: COLORS.sageBg,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: COLORS.sageBorder,
+  
+  // Content
+  contentContainer: {
+    padding: SPACING.lg,
+    paddingBottom: 120, // Space for footer
   },
   categoryText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.sage,
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.muted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: SPACING.sm,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.md,
   },
   productName: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: COLORS.primary,
-    lineHeight: 28,
+    flex: 1,
+    marginRight: SPACING.md,
+    lineHeight: 32,
   },
   productPrice: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '700',
-    color: COLORS.accent,
+    color: COLORS.primary,
   },
-  divider: {
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  descriptionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.muted,
+  
+  // Description
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginBottom: SPACING.md,
+    marginTop: SPACING.lg,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   descriptionText: {
-    fontSize: 14,
-    color: COLORS.primary,
-    lineHeight: 22,
+    fontSize: 15,
+    color: '#444444',
+    lineHeight: 24,
   },
 
-  // ─── Variantes / tailles ─────────────────────────────────────────
-  variantsLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: SPACING.xs,
-  },
+  // Variants
   variantsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -184,112 +136,101 @@ export const styles = StyleSheet.create({
   },
   variantChip: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    borderRadius: 10,
-    borderWidth: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1.5,
     borderColor: COLORS.border,
     backgroundColor: COLORS.card,
+    minWidth: 64,
     alignItems: 'center',
-    minWidth: 52,
+  },
+  variantChipSelected: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
   },
   variantChipOutOfStock: {
     backgroundColor: COLORS.outOfStock,
     borderColor: COLORS.outOfStock,
+    opacity: 0.6,
   },
   variantChipText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: COLORS.primary,
   },
-  variantChipTextOutOfStock: {
-    color: COLORS.outOfStockText,
-    textDecorationLine: 'line-through',
-  },
-  variantStock: {
-    fontSize: 10,
-    color: COLORS.muted,
-    marginTop: 2,
-  },
-  variantColor: {
-    fontSize: 11,
-    color: COLORS.muted,
-    marginTop: 1,
+  variantChipTextSelected: {
+    color: COLORS.card,
   },
 
-  // ─── Quantité ────────────────────────────────────────────────────
-  quantityLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: COLORS.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: SPACING.xs,
-  },
+  // Quantity
   quantityRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.md,
+    backgroundColor: COLORS.lightBg,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
   },
   quantityBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.card,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 12,
   },
   quantityBtnText: {
     fontSize: 18,
     color: COLORS.primary,
-    lineHeight: 22,
+    fontWeight: '600',
   },
   quantityValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: COLORS.primary,
-    minWidth: 28,
+    minWidth: 32,
     textAlign: 'center',
   },
 
-  // ─── Boutons d'action ────────────────────────────────────────────
-  actionsRow: {
+  // Footer
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    paddingBottom: 34, // Safe area bottom
     flexDirection: 'row',
-    gap: SPACING.sm,
-    marginTop: SPACING.xs,
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  btnFav: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.card,
   },
   btnCart: {
     flex: 1,
-    backgroundColor: COLORS.accent,
-    borderRadius: 99,
-    height: 52,
+    height: 54,
+    backgroundColor: COLORS.primary,
+    borderRadius: 27,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  btnCartPressed: {
-    opacity: 0.85,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   btnCartText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  btnFav: {
-    width: 52,
-    height: 52,
-    borderRadius: 99,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnFavActive: {
-    backgroundColor: '#FEF3EE',
-    borderColor: '#F0C4B0',
-  },
-  btnFavText: {
-    fontSize: 20,
+    color: COLORS.card,
+    fontSize: 16,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
 });
