@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/services/supabaseClient';
 
 export type Product = {
+  category: string;
   id: string;
   name: string;
   price: number;
