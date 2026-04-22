@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, styles } from './style.compte';
 
+
 // ─── Données fictives (à remplacer par un vrai fetch plus tard) ──────────────
 
 const FAKE_ORDERS = [
@@ -86,7 +87,7 @@ function EditEmail({ currentEmail }: { currentEmail: string }) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Modifier l'adresse email</Text>
+      <Text style={styles.sectionTitle}>Modifier l&apos;adresse email</Text>
       <Field
         label="Email actuel"
         icon="✉"
@@ -107,7 +108,7 @@ function EditEmail({ currentEmail }: { currentEmail: string }) {
         style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
         onPress={() => { /* TODO: appel Supabase updateUser */ }}
       >
-        <Text style={styles.btnPrimaryText}>Mettre à jour l'email</Text>
+        <Text style={styles.btnPrimaryText}>Mettre à jour l&apos;email</Text>
       </Pressable>
     </View>
   );
@@ -150,9 +151,11 @@ function EditPassword() {
 
 // ─── Écran principal ──────────────────────────────────────────────────────────
 
+
 export default function CompteScreen() {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
+
 
   // ── Chargement ──────────────────────────────────────────────────
   if (loading) {

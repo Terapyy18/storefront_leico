@@ -179,7 +179,7 @@ export default function SignupScreen() {
           >
             {loading
               ? <ActivityIndicator color="#FFF" />
-              : <Text style={styles.btnText}>S'inscrire</Text>
+              : <Text style={styles.btnText}>S&apos;inscrire</Text>
             }
           </Pressable>
 
