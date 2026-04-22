@@ -1,4 +1,5 @@
 import {
+  Alert,
   FlatList,
   Modal,
   Pressable,
@@ -7,7 +8,9 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { useCart } from '@/hooks/useCart';
+import { useAuth } from '@/hooks/useAuth';
 import type { CartItem } from '@/context/CartContext';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -68,6 +71,8 @@ function CartItemRow({ item }: { item: CartItem }) {
 
 export function CartModal({ visible, onClose }: CartModalProps) {
   const { items, totalPrice } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
 
   return (
     <Modal
@@ -111,7 +116,17 @@ export function CartModal({ visible, onClose }: CartModalProps) {
                 <Text style={styles.totalPrice}>€{totalPrice.toFixed(2)}</Text>
               </View>
 
-              <Pressable style={styles.checkoutButton} onPress={() => {}}>
+              <Pressable
+                style={styles.checkoutButton}
+                onPress={() => {
+                  if (!user) {
+                    Alert.alert('Sign in required', 'Please sign in to checkout');
+                    return;
+                  }
+                  onClose();
+                  router.push('/(tabs)/checkout');
+                }}
+              >
                 <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
               </Pressable>
 

@@ -1,3 +1,8 @@
+import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/hooks/useCart';
+import { useFavorites } from '@/hooks/useFavorites';
+import type { Product } from '@/hooks/useProducts';
+import { supabase } from '@/services/supabaseClient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -5,15 +10,12 @@ import {
   Alert,
   Image,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '@/services/supabaseClient';
-import { useFavorites } from '@/hooks/useFavorites';
-import { useAuth } from '@/hooks/useAuth';
-import { useCart } from '@/hooks/useCart';
-import type { Product } from '@/hooks/useProducts';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, styles } from './style.product';
 
 type ProductVariant = {
   id: string;
@@ -26,19 +28,20 @@ type ProductVariant = {
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+
   const { user } = useAuth();
   const { addItem } = useCart();
   const { isFavorited, addFavorite, removeFavorite } = useFavorites(user?.id ?? null);
 
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     if (!id) return;
-
     const fetchData = async () => {
       setLoading(true);
 
@@ -49,7 +52,6 @@ export default function ProductDetailScreen() {
         .single();
 
       if (productError || !productData) {
-        console.error('[ProductDetail] Produit introuvable :', productError?.message);
         setNotFound(true);
         setLoading(false);
         return;
@@ -62,34 +64,38 @@ export default function ProductDetailScreen() {
         .select('*')
         .eq('product_id', id);
 
-      if (variantError) {
-        console.error('[ProductDetail] Erreur variantes :', variantError.message);
-      } else {
-        setVariants((variantData ?? []) as ProductVariant[]);
+      if (!variantError && variantData) {
+        const sortedVariants = (variantData as ProductVariant[]).sort((a, b) => a.size?.localeCompare(b.size || '') || 0);
+        setVariants(sortedVariants);
+        const available = sortedVariants.find(v => v.stock > 0);
+        if (available) {
+          setSelectedVariantId(available.id);
+        } else if (sortedVariants.length > 0) {
+          setSelectedVariantId(sortedVariants[0].id);
+        }
       }
 
       setLoading(false);
     };
-
     fetchData();
   }, [id]);
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </SafeAreaView>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
     );
   }
 
   if (notFound || !product) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Product not found</Text>
+      <View style={styles.centered}>
+        <Text style={styles.notFoundText}>Produit introuvable</Text>
         <Pressable onPress={() => router.back()}>
-          <Text>← Go back</Text>
+          <Text style={styles.backLink}>← Retour</Text>
         </Pressable>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -97,16 +103,27 @@ export default function ProductDetailScreen() {
 
   const handleFavoritePress = () => {
     if (!user) {
-      Alert.alert('Sign in', 'Please sign in to add favorites');
+      Alert.alert('Connexion requise', 'Connectez-vous pour ajouter aux favoris.');
       return;
     }
-    favorited ? removeFavorite(product.id) : addFavorite(product.id);
+    if (favorited) {
+      removeFavorite(product.id);
+    } else {
+      addFavorite(product.id);
+    }
   };
 
   const handleAddToCart = () => {
-    const variant = variants[0];
-    if (!variant) {
-      Alert.alert('Unavailable', 'No variants available for this product.');
+    if (!user) {
+      Alert.alert('Connexion requise', 'Connectez-vous pour ajouter au panier.', [
+        { text: 'Annuler', style: 'cancel' },
+        { text: 'Connexion', onPress: () => router.push('/(auth)/login') },
+      ]);
+      return;
+    }
+    const variant = variants.find(v => v.id === selectedVariantId) || variants[0];
+    if (!variant || variant.stock <= 0) {
+      Alert.alert('Indisponible', 'Ce produit est épuisé dans cette taille.');
       return;
     }
     addItem({
@@ -118,53 +135,125 @@ export default function ProductDetailScreen() {
       size: variant.size ?? undefined,
       color: variant.color ?? undefined,
     });
-    Alert.alert('Added to cart!');
+    Alert.alert('Succès', 'Ajouté au panier !');
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          style={{ width: '100%', height: 220 }}
-          resizeMode="cover"
-        />
-      ) : null}
-
-      <Text>{product.name}</Text>
-      <Text>${product.price.toFixed(2)}</Text>
-      {product.description ? <Text>{product.description}</Text> : null}
-
-      {variants.length > 0 ? (
-        <View>
-          <Text>Variants</Text>
-          {variants.map((v) => (
-            <View key={v.id} style={{ flexDirection: 'row', gap: 8 }}>
-              {v.size  ? <Text>Size: {v.size}</Text>  : null}
-              {v.color ? <Text>Color: {v.color}</Text> : null}
-              <Text>{v.stock > 0 ? `Stock: ${v.stock}` : 'Out of stock'}</Text>
+    <View style={styles.root}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Image Container */}
+        <View style={styles.imageContainer}>
+          {product.image_url ? (
+            <Image
+              source={{ uri: product.image_url }}
+              style={styles.productImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.imagePlaceholder}>
+              <Ionicons name="image-outline" size={64} color={COLORS.muted} />
             </View>
-          ))}
+          )}
+          
+          <Pressable style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
+          </Pressable>
         </View>
-      ) : null}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-        <Pressable onPress={() => setQuantity((q) => Math.max(1, q - 1))}>
-          <Text>−</Text>
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          {product.category && (
+            <Text style={styles.categoryText}>{product.category}</Text>
+          )}
+          
+          <View style={styles.titleRow}>
+            <Text style={styles.productName}>{product.name}</Text>
+            <Text style={styles.productPrice}>{product.price.toFixed(2)} €</Text>
+          </View>
+
+          {/* Variants */}
+          {variants.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Taille</Text>
+              <View style={styles.variantsGrid}>
+                {variants.map((v) => {
+                  const outOfStock = v.stock === 0;
+                  const selected = v.id === selectedVariantId;
+                  return (
+                    <Pressable
+                      key={v.id}
+                      onPress={() => {
+                        if (!outOfStock) setSelectedVariantId(v.id);
+                      }}
+                      style={[
+                        styles.variantChip,
+                        selected && styles.variantChipSelected,
+                        outOfStock && styles.variantChipOutOfStock,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.variantChipText,
+                          selected && styles.variantChipTextSelected,
+                        ]}
+                      >
+                        {v.size || v.color || 'Unique'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Quantity */}
+          <Text style={styles.sectionTitle}>Quantité</Text>
+          <View style={styles.quantityRow}>
+            <Pressable
+              style={styles.quantityBtn}
+              onPress={() => setQuantity((q) => Math.max(1, q - 1))}
+            >
+              <Ionicons name="remove" size={20} color={COLORS.primary} />
+            </Pressable>
+            <Text style={styles.quantityValue}>{quantity}</Text>
+            <Pressable
+              style={styles.quantityBtn}
+              onPress={() => setQuantity((q) => q + 1)}
+            >
+              <Ionicons name="add" size={20} color={COLORS.primary} />
+            </Pressable>
+          </View>
+
+          {/* Description */}
+          {product.description && (
+            <View>
+              <Text style={styles.sectionTitle}>Description</Text>
+              <Text style={styles.descriptionText}>{product.description}</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+
+      {/* Sticky Footer */}
+      <View style={styles.footer}>
+        <Pressable
+          style={styles.btnFav}
+          onPress={handleFavoritePress}
+        >
+          <Ionicons 
+            name={favorited ? "heart" : "heart-outline"} 
+            size={26} 
+            color={favorited ? COLORS.error : COLORS.primary} 
+          />
         </Pressable>
-        <Text>{quantity}</Text>
-        <Pressable onPress={() => setQuantity((q) => q + 1)}>
-          <Text>+</Text>
+        
+        <Pressable
+          style={styles.btnCart}
+          onPress={handleAddToCart}
+        >
+          <Text style={styles.btnCartText}>Ajouter au panier</Text>
         </Pressable>
       </View>
-
-      <Pressable onPress={handleAddToCart}>
-        <Text>Add to Cart</Text>
-      </Pressable>
-
-      <Pressable onPress={handleFavoritePress}>
-        <Text>{favorited ? '♥ Favorited' : '♡ Add to Favorites'}</Text>
-      </Pressable>
-    </SafeAreaView>
+    </View>
   );
 }
