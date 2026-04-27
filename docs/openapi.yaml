@@ -1,0 +1,358 @@
+openapi: 3.1.0
+info:
+  title: Leico API
+  version: 1.0.0
+  description: |
+    Endpoints utilisés par l'app Leico. Toutes les routes sont fournies
+    nativement par **Supabase** :
+
+    - `auth/v1/*` → Supabase Auth (signup / signin / signout)
+    - `rest/v1/<table>` → API PostgREST auto-générée par Supabase à partir
+      du schéma SQL (voir `supabase/schema.sql`)
+
+    Aucune Edge Function n'est utilisée (le checkout est simulé côté client).
+
+servers:
+  - url: https://{project}.supabase.co
+    description: Projet Supabase
+    variables:
+      project:
+        default: your-project
+        description: Identifiant du projet Supabase
+
+# ─── Sécurité ───────────────────────────────────────────────────────────────
+security:
+  - bearerAuth: []
+
+# ─── Tags ───────────────────────────────────────────────────────────────────
+tags:
+  - name: Auth
+    description: Authentification (Supabase Auth)
+  - name: Catalog
+    description: Catalogue produits (lecture publique)
+  - name: Favorites
+    description: Favoris utilisateur (RLS — own rows)
+  - name: Orders
+    description: Commandes utilisateur (RLS — own rows)
+
+# ─── Routes ─────────────────────────────────────────────────────────────────
+paths:
+  /auth/v1/signup:
+    post:
+      tags: [Auth]
+      summary: Créer un compte
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 6 }
+      responses:
+        '200':
+          description: Compte créé, session retournée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/v1/token:
+    post:
+      tags: [Auth]
+      summary: Connexion (grant_type=password)
+      security: []
+      parameters:
+        - name: grant_type
+          in: query
+          required: true
+          schema: { type: string, enum: [password, refresh_token] }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Session ouverte
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AuthResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /auth/v1/logout:
+    post:
+      tags: [Auth]
+      summary: Déconnexion
+      responses:
+        '204': { description: Session révoquée }
+
+  /rest/v1/product:
+    get:
+      tags: [Catalog]
+      summary: Lister les produits
+      security: []
+      parameters:
+        - name: is_active
+          in: query
+          schema: { type: string, example: 'eq.true' }
+        - name: category_id
+          in: query
+          schema: { type: string, example: 'eq.<uuid>' }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 10 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Liste des produits
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Product' }
+
+  /rest/v1/product?id=eq.{id}:
+    get:
+      tags: [Catalog]
+      summary: Récupérer un produit
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Produit
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Product' }
+
+  /rest/v1/category:
+    get:
+      tags: [Catalog]
+      summary: Lister les catégories
+      security: []
+      responses:
+        '200':
+          description: Liste des catégories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Category' }
+
+  /rest/v1/favorite:
+    get:
+      tags: [Favorites]
+      summary: Lister les favoris du user courant (RLS)
+      responses:
+        '200':
+          description: Favoris
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Favorite' }
+    post:
+      tags: [Favorites]
+      summary: Ajouter un produit en favori
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, product_id]
+              properties:
+                user_id: { type: string, format: uuid }
+                product_id: { type: string, format: uuid }
+      responses:
+        '201': { description: Favori créé }
+        '409': { description: Favori déjà existant (UNIQUE user_id+product_id) }
+    delete:
+      tags: [Favorites]
+      summary: Retirer un favori
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema: { type: string, example: 'eq.<uuid>' }
+        - name: product_id
+          in: query
+          required: true
+          schema: { type: string, example: 'eq.<uuid>' }
+      responses:
+        '204': { description: Favori supprimé }
+
+  /rest/v1/order:
+    get:
+      tags: [Orders]
+      summary: Lister les commandes du user courant (RLS)
+      responses:
+        '200':
+          description: Commandes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Order' }
+    post:
+      tags: [Orders]
+      summary: Créer une commande (checkout simulé)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id, total_amount, shipping_address]
+              properties:
+                user_id: { type: string, format: uuid }
+                total_amount: { type: number, format: float }
+                shipping_address: { type: string }
+                status:
+                  type: string
+                  enum: [pending, paid, shipped, delivered, cancelled]
+                  default: paid
+      responses:
+        '201':
+          description: Commande créée
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Order' }
+
+  /rest/v1/order_item:
+    post:
+      tags: [Orders]
+      summary: Ajouter les lignes d'une commande
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [order_id, variant_id, quantity, unit_price]
+                properties:
+                  order_id: { type: string, format: uuid }
+                  variant_id: { type: string, format: uuid }
+                  quantity: { type: integer, minimum: 1 }
+                  unit_price: { type: number, format: float }
+      responses:
+        '201': { description: Lignes créées }
+
+# ─── Composants ─────────────────────────────────────────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Requête invalide
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Token manquant ou invalide
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        refresh_token: { type: string }
+        expires_in: { type: integer }
+        token_type: { type: string, example: bearer }
+        user: { $ref: '#/components/schemas/User' }
+
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+
+    Category:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        slug: { type: string }
+        parent_id: { type: string, format: uuid, nullable: true }
+
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        description: { type: string, nullable: true }
+        price: { type: number, format: float }
+        image_url: { type: string, nullable: true }
+        category_id: { type: string, format: uuid, nullable: true }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+
+    ProductVariant:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        size: { type: string, nullable: true }
+        color: { type: string, nullable: true }
+        stock: { type: integer }
+        sku: { type: string, nullable: true }
+
+    Favorite:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        created_at: { type: string, format: date-time }
+
+    Order:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        total_amount: { type: number, format: float }
+        shipping_address: { type: string }
+        status:
+          type: string
+          enum: [pending, paid, shipped, delivered, cancelled]
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    OrderItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        order_id: { type: string, format: uuid }
+        variant_id: { type: string, format: uuid }
+        quantity: { type: integer, minimum: 1 }
+        unit_price: { type: number, format: float }

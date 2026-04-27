@@ -1,12 +1,4 @@
-import {
-  Alert,
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useCart } from '@/hooks/useCart';
@@ -29,14 +21,12 @@ function CartItemRow({ item }: { item: CartItem }) {
     <View style={styles.row}>
       <View style={styles.rowInfo}>
         <Text style={styles.itemName}>{item.product_name}</Text>
-        {(item.size || item.color) ? (
+        {item.size || item.color ? (
           <Text style={styles.itemVariant}>
             {[item.size, item.color].filter(Boolean).join(' · ')}
           </Text>
         ) : null}
-        <Text style={styles.itemPrice}>
-          €{(item.product_price * item.quantity).toFixed(2)}
-        </Text>
+        <Text style={styles.itemPrice}>€{(item.product_price * item.quantity).toFixed(2)}</Text>
       </View>
 
       <View style={styles.qtyControls}>
@@ -56,10 +46,7 @@ function CartItemRow({ item }: { item: CartItem }) {
           <Text style={styles.qtyButtonText}>+</Text>
         </Pressable>
 
-        <Pressable
-          style={styles.removeButton}
-          onPress={() => removeItem(item.variant_id)}
-        >
+        <Pressable style={styles.removeButton} onPress={() => removeItem(item.variant_id)}>
           <Text style={styles.removeButtonText}>✕</Text>
         </Pressable>
       </View>
@@ -82,7 +69,6 @@ export function CartModal({ visible, onClose }: CartModalProps) {
       onRequestClose={onClose}
     >
       <SafeAreaView style={styles.container}>
-
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Your Cart</Text>
@@ -136,7 +122,6 @@ export function CartModal({ visible, onClose }: CartModalProps) {
             </View>
           </>
         )}
-
       </SafeAreaView>
     </Modal>
   );

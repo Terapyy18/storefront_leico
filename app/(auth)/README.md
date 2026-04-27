@@ -34,10 +34,10 @@ Appelle `supabase.auth.signInWithPassword()` via le hook `useAuth`.
 
 #### Validations côté client
 
-| Champ       | Règle                              |
-|-------------|------------------------------------|
-| `email`     | Requis · Format `x@x.x`           |
-| `password`  | Requis · Minimum 6 caractères      |
+| Champ      | Règle                         |
+| ---------- | ----------------------------- |
+| `email`    | Requis · Format `x@x.x`       |
+| `password` | Requis · Minimum 6 caractères |
 
 #### Flux de succès
 
@@ -52,8 +52,8 @@ Utilisateur soumet le formulaire
 
 ```ts
 const { error } = await supabase.auth.signInWithPassword({
-  email: "utilisateur@exemple.com",
-  password: "monmotdepasse",
+  email: 'utilisateur@exemple.com',
+  password: 'monmotdepasse',
 });
 ```
 
@@ -79,13 +79,13 @@ const { error } = await supabase.auth.signInWithPassword({
 
 #### Erreurs possibles
 
-| Code / Message Supabase              | Cause                                   | Affichage utilisateur                                      |
-|--------------------------------------|-----------------------------------------|------------------------------------------------------------|
-| `Invalid login credentials`          | Email ou mot de passe incorrect         | Message d'erreur Supabase affiché tel quel                |
-| `Email not confirmed`                | Compte créé mais email non vérifié      | Message d'erreur Supabase affiché tel quel                |
-| *(validation locale)* champ vide     | Email absent                            | `"L'email est requis."`                                    |
-| *(validation locale)* format invalide| Email mal formé                         | `"Format d'email invalide."`                               |
-| *(validation locale)* trop court     | Mot de passe < 6 caractères             | `"Le mot de passe doit contenir au moins 6 caractères."`   |
+| Code / Message Supabase               | Cause                              | Affichage utilisateur                                    |
+| ------------------------------------- | ---------------------------------- | -------------------------------------------------------- |
+| `Invalid login credentials`           | Email ou mot de passe incorrect    | Message d'erreur Supabase affiché tel quel               |
+| `Email not confirmed`                 | Compte créé mais email non vérifié | Message d'erreur Supabase affiché tel quel               |
+| _(validation locale)_ champ vide      | Email absent                       | `"L'email est requis."`                                  |
+| _(validation locale)_ format invalide | Email mal formé                    | `"Format d'email invalide."`                             |
+| _(validation locale)_ trop court      | Mot de passe < 6 caractères        | `"Le mot de passe doit contenir au moins 6 caractères."` |
 
 ---
 
@@ -103,11 +103,11 @@ Après l'inscription, **Supabase envoie un email de confirmation** : l'utilisate
 
 #### Validations côté client
 
-| Champ              | Règle                                          |
-|--------------------|------------------------------------------------|
-| `email`            | Requis · Format `x@x.x`                       |
-| `password`         | Requis · Minimum 6 caractères                  |
-| `confirmPassword`  | Doit être identique à `password`               |
+| Champ             | Règle                            |
+| ----------------- | -------------------------------- |
+| `email`           | Requis · Format `x@x.x`          |
+| `password`        | Requis · Minimum 6 caractères    |
+| `confirmPassword` | Doit être identique à `password` |
 
 #### Flux de succès
 
@@ -123,8 +123,8 @@ Utilisateur soumet le formulaire
 
 ```ts
 const { error } = await supabase.auth.signUp({
-  email: "nouveau@exemple.com",
-  password: "monmotdepasse",
+  email: 'nouveau@exemple.com',
+  password: 'monmotdepasse',
 });
 ```
 
@@ -147,14 +147,14 @@ const { error } = await supabase.auth.signUp({
 
 #### Erreurs possibles
 
-| Code / Message Supabase                   | Cause                                       | Affichage utilisateur                                         |
-|-------------------------------------------|---------------------------------------------|---------------------------------------------------------------|
-| `User already registered`                 | Email déjà utilisé                          | Message d'erreur Supabase affiché tel quel                   |
-| `Password should be at least 6 characters`| Mot de passe trop court (validation Supabase)| Message d'erreur Supabase affiché tel quel                   |
-| *(validation locale)* champ vide          | Email absent                                | `"L'email est requis."`                                       |
-| *(validation locale)* format invalide     | Email mal formé                             | `"Format d'email invalide."`                                  |
-| *(validation locale)* trop court          | Mot de passe < 6 caractères                 | `"Le mot de passe doit contenir au moins 6 caractères."`      |
-| *(validation locale)* ne correspondent pas| Les deux mots de passe diffèrent            | `"Les mots de passe ne correspondent pas."`                   |
+| Code / Message Supabase                    | Cause                                         | Affichage utilisateur                                    |
+| ------------------------------------------ | --------------------------------------------- | -------------------------------------------------------- |
+| `User already registered`                  | Email déjà utilisé                            | Message d'erreur Supabase affiché tel quel               |
+| `Password should be at least 6 characters` | Mot de passe trop court (validation Supabase) | Message d'erreur Supabase affiché tel quel               |
+| _(validation locale)_ champ vide           | Email absent                                  | `"L'email est requis."`                                  |
+| _(validation locale)_ format invalide      | Email mal formé                               | `"Format d'email invalide."`                             |
+| _(validation locale)_ trop court           | Mot de passe < 6 caractères                   | `"Le mot de passe doit contenir au moins 6 caractères."` |
+| _(validation locale)_ ne correspondent pas | Les deux mots de passe diffèrent              | `"Les mots de passe ne correspondent pas."`              |
 
 ---
 
@@ -191,20 +191,20 @@ signOut()
 
 #### Erreurs possibles
 
-| Cause                   | Comportement                                                      |
-|-------------------------|-------------------------------------------------------------------|
-| Erreur réseau Supabase  | L'erreur est silencieuse (non affichée à l'utilisateur)          |
-| Session déjà expirée    | `signOut()` réussit quand même côté client (session locale vidée)|
+| Cause                  | Comportement                                                      |
+| ---------------------- | ----------------------------------------------------------------- |
+| Erreur réseau Supabase | L'erreur est silencieuse (non affichée à l'utilisateur)           |
+| Session déjà expirée   | `signOut()` réussit quand même côté client (session locale vidée) |
 
 ---
 
 ## Hooks & Contexte utilisés
 
-| Hook / Contexte             | Fichier                    | Rôle                                              |
-|-----------------------------|----------------------------|---------------------------------------------------|
-| `useAuth()`                 | `hooks/useAuth.ts`         | Expose `signIn`, `signUp`, `signOut`, `user`      |
-| `AuthContext` / `AuthProvider` | `context/AuthContext.tsx` | State global de session (user, session, loading) |
-| `supabase`                  | `services/supabaseClient.ts` | Client Supabase (Auth + storage platform-aware) |
+| Hook / Contexte                | Fichier                      | Rôle                                             |
+| ------------------------------ | ---------------------------- | ------------------------------------------------ |
+| `useAuth()`                    | `hooks/useAuth.ts`           | Expose `signIn`, `signUp`, `signOut`, `user`     |
+| `AuthContext` / `AuthProvider` | `context/AuthContext.tsx`    | State global de session (user, session, loading) |
+| `supabase`                     | `services/supabaseClient.ts` | Client Supabase (Auth + storage platform-aware)  |
 
 ---
 

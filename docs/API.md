@@ -1,12 +1,15 @@
 # leico API Documentation
 
 ## Base URL
+
 ```
 https://your-project.supabase.co/functions/v1
 ```
 
 ## Authentication
+
 Utilise le Bearer token Supabase dans le header:
+
 ```
 Authorization: Bearer {access_token}
 ```
@@ -16,9 +19,11 @@ Authorization: Bearer {access_token}
 ## 🔐 AUTH ENDPOINTS
 
 ### POST /auth-signup
+
 Crée un nouvel utilisateur
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -28,6 +33,7 @@ Crée un nouvel utilisateur
 ```
 
 **Response (200):**
+
 ```json
 {
   "user": { "id": "uuid", "email": "user@example.com" },
@@ -36,6 +42,7 @@ Crée un nouvel utilisateur
 ```
 
 **Errors:**
+
 - `400` Email already exists
 - `400` Password too weak
 - `400` Passwords don't match
@@ -43,9 +50,11 @@ Crée un nouvel utilisateur
 ---
 
 ### POST /auth-signin
+
 Login utilisateur
 
 **Request:**
+
 ```json
 {
   "email": "user@example.com",
@@ -54,6 +63,7 @@ Login utilisateur
 ```
 
 **Response (200):**
+
 ```json
 {
   "user": { "id": "uuid", "email": "user@example.com" },
@@ -62,14 +72,17 @@ Login utilisateur
 ```
 
 **Errors:**
+
 - `401` Invalid credentials
 
 ---
 
 ### POST /auth-signout
+
 Logout utilisateur
 
 **Request:**
+
 ```json
 {
   "refresh_token": "..."
@@ -77,6 +90,7 @@ Logout utilisateur
 ```
 
 **Response (200):**
+
 ```json
 { "message": "Signed out successfully" }
 ```
@@ -86,16 +100,18 @@ Logout utilisateur
 ## 📦 PRODUCTS ENDPOINTS
 
 ### GET /products
+
 Liste les produits (avec pagination)
 
 **Query params:**
 
-| Param   | Type   | Default | Description              |
-|---------|--------|---------|--------------------------|
+| Param   | Type   | Default | Description               |
+| ------- | ------ | ------- | ------------------------- |
 | `page`  | number | `0`     | Page courante (0-indexed) |
-| `limit` | number | `10`    | Nombre d'items par page  |
+| `limit` | number | `10`    | Nombre d'items par page   |
 
 **Response (200):**
+
 ```json
 {
   "products": [
@@ -117,9 +133,11 @@ Liste les produits (avec pagination)
 ---
 
 ### GET /products-by-category
+
 Liste les produits groupés par catégorie (1 seule requête JOIN)
 
 **Response (200):**
+
 ```json
 {
   "sections": [
@@ -145,9 +163,11 @@ Liste les produits groupés par catégorie (1 seule requête JOIN)
 ---
 
 ### GET /products/:id
+
 Détail d'un produit + ses variantes
 
 **Response (200):**
+
 ```json
 {
   "product": {
@@ -173,6 +193,7 @@ Détail d'un produit + ses variantes
 ```
 
 **Errors:**
+
 - `404` Product not found
 
 ---
@@ -180,11 +201,13 @@ Détail d'un produit + ses variantes
 ## ❤️ FAVORITES ENDPOINTS
 
 ### POST /favorites-add
+
 Ajoute un produit aux favoris
 
 **Auth required:** ✅ YES
 
 **Request:**
+
 ```json
 {
   "product_id": "uuid"
@@ -192,6 +215,7 @@ Ajoute un produit aux favoris
 ```
 
 **Response (200):**
+
 ```json
 {
   "id": "uuid",
@@ -202,17 +226,20 @@ Ajoute un produit aux favoris
 ```
 
 **Errors:**
+
 - `401` Unauthorized
 - `400` Product already favorited
 
 ---
 
 ### GET /favorites-list
+
 Liste les favoris de l'utilisateur connecté
 
 **Auth required:** ✅ YES
 
 **Response (200):**
+
 ```json
 {
   "favorites": [
@@ -232,24 +259,29 @@ Liste les favoris de l'utilisateur connecté
 ```
 
 **Errors:**
+
 - `401` Unauthorized
 
 ---
 
 ### DELETE /favorites-remove/:id
+
 Supprime un favori
 
 **Auth required:** ✅ YES
 
 **Route param:**
+
 - `id` : uuid du favori (pas du produit)
 
 **Response (200):**
+
 ```json
 { "message": "Favorite removed" }
 ```
 
 **Errors:**
+
 - `401` Unauthorized
 - `404` Favorite not found
 
@@ -261,23 +293,25 @@ Supprime un favori
 > Aucun endpoint serveur n'est requis pour les opérations panier.  
 > Les items du panier sont envoyés au moment du checkout.
 
-| Opération         | Méthode     |
-|-------------------|-------------|
-| Ajouter un item   | `addItem(CartItem)` |
-| Supprimer un item | `removeItem(variant_id)` |
+| Opération         | Méthode                           |
+| ----------------- | --------------------------------- |
+| Ajouter un item   | `addItem(CartItem)`               |
+| Supprimer un item | `removeItem(variant_id)`          |
 | Modifier la qté   | `updateQuantity(variant_id, qty)` |
-| Vider le panier   | `clearCart()` |
+| Vider le panier   | `clearCart()`                     |
 
 ---
 
 ## 💳 PAYMENT ENDPOINTS (À IMPLÉMENTER)
 
 ### POST /create-payment-intent
+
 Crée une Payment Intent Stripe
 
 **Auth required:** ✅ YES
 
 **Request:**
+
 ```json
 {
   "amount": 4999,
@@ -286,6 +320,7 @@ Crée une Payment Intent Stripe
 ```
 
 **Response (200):**
+
 ```json
 {
   "clientSecret": "pi_xxx_secret_xxx"
@@ -293,6 +328,7 @@ Crée une Payment Intent Stripe
 ```
 
 **Errors:**
+
 - `401` Unauthorized
 - `400` Invalid amount
 - `500` Stripe error
@@ -300,22 +336,23 @@ Crée une Payment Intent Stripe
 ---
 
 ### POST /create-order
+
 Crée une commande après paiement confirmé
 
 **Auth required:** ✅ YES
 
 **Request:**
+
 ```json
 {
-  "items": [
-    { "variant_id": "uuid", "quantity": 2, "unit_price": 49.99 }
-  ],
+  "items": [{ "variant_id": "uuid", "quantity": 2, "unit_price": 49.99 }],
   "shipping_address": "12 rue de la Paix, Paris",
   "total_amount": 99.98
 }
 ```
 
 **Response (200):**
+
 ```json
 {
   "order": {
@@ -329,6 +366,7 @@ Crée une commande après paiement confirmé
 ```
 
 **Errors:**
+
 - `401` Unauthorized
 - `400` Insufficient stock
 
@@ -349,23 +387,23 @@ order_item      (id, order_id, variant_id, quantity, unit_price)
 
 ## 🔒 RLS Policies (Row Level Security)
 
-| Table            | SELECT          | INSERT                      | DELETE                      |
-|------------------|-----------------|-----------------------------|-----------------------------|
-| `product`        | Public          | Admin only                  | Admin only                  |
-| `product_variant`| Public          | Admin only                  | Admin only                  |
-| `category`       | Public          | Admin only                  | Admin only                  |
-| `favorite`       | Own rows only   | `auth.uid() = user_id`      | `auth.uid() = user_id`      |
-| `order`          | Own rows only   | `auth.uid() = user_id`      | —                           |
-| `order_item`     | Via order       | Via order                   | —                           |
+| Table             | SELECT        | INSERT                 | DELETE                 |
+| ----------------- | ------------- | ---------------------- | ---------------------- |
+| `product`         | Public        | Admin only             | Admin only             |
+| `product_variant` | Public        | Admin only             | Admin only             |
+| `category`        | Public        | Admin only             | Admin only             |
+| `favorite`        | Own rows only | `auth.uid() = user_id` | `auth.uid() = user_id` |
+| `order`           | Own rows only | `auth.uid() = user_id` | —                      |
+| `order_item`      | Via order     | Via order              | —                      |
 
 ---
 
 ## Error Codes Standard
 
-| Code | Signification                    |
-|------|----------------------------------|
-| 400  | Bad Request (données invalides)  |
-| 401  | Unauthorized (token manquant)    |
-| 403  | Forbidden (token invalide)       |
-| 404  | Not Found                        |
-| 500  | Internal Server Error            |
+| Code | Signification                   |
+| ---- | ------------------------------- |
+| 400  | Bad Request (données invalides) |
+| 401  | Unauthorized (token manquant)   |
+| 403  | Forbidden (token invalide)      |
+| 404  | Not Found                       |
+| 500  | Internal Server Error           |

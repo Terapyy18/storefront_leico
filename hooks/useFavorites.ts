@@ -44,56 +44,60 @@ export function useFavorites(userId: string | null): UseFavoritesResult {
 
   // ─── Add ─────────────────────────────────────────────────────────────────
 
-  const addFavorite = useCallback(async (productId: string) => {
-    if (!userId) return;
+  const addFavorite = useCallback(
+    async (productId: string) => {
+      if (!userId) return;
 
-    // Mise à jour optimiste : feedback immédiat
-    setFavorites((prev) =>
-      prev.includes(productId) ? prev : [...prev, productId]
-    );
+      // Mise à jour optimiste : feedback immédiat
+      setFavorites((prev) => (prev.includes(productId) ? prev : [...prev, productId]));
 
-    const { error } = await supabase
-      .from('favorite')
-      .insert({ user_id: userId, product_id: productId });
+      const { error } = await supabase
+        .from('favorite')
+        .insert({ user_id: userId, product_id: productId });
 
-    if (error) {
-      if (error.code === '23505') {
-        // Déjà en favori côté serveur — état local déjà correct, rien à faire
-        console.warn('[useFavorites] Produit déjà dans les favoris :', productId);
-      } else {
-        // Rollback
-        console.error('[useFavorites] Erreur lors de l\'ajout du favori :', error.message);
-        setFavorites((prev) => prev.filter((id) => id !== productId));
+      if (error) {
+        if (error.code === '23505') {
+          // Déjà en favori côté serveur — état local déjà correct, rien à faire
+          console.warn('[useFavorites] Produit déjà dans les favoris :', productId);
+        } else {
+          // Rollback
+          console.error("[useFavorites] Erreur lors de l'ajout du favori :", error.message);
+          setFavorites((prev) => prev.filter((id) => id !== productId));
+        }
       }
-    }
-  }, [userId]);
+    },
+    [userId],
+  );
 
   // ─── Remove ──────────────────────────────────────────────────────────────
 
-  const removeFavorite = useCallback(async (productId: string) => {
-    if (!userId) return;
+  const removeFavorite = useCallback(
+    async (productId: string) => {
+      if (!userId) return;
 
-    // Mise à jour optimiste
-    setFavorites((prev) => prev.filter((id) => id !== productId));
+      // Mise à jour optimiste
+      setFavorites((prev) => prev.filter((id) => id !== productId));
 
-    const { error } = await supabase
-      .from('favorite')
-      .delete()
-      .eq('user_id', userId)
-      .eq('product_id', productId);
+      const { error } = await supabase
+        .from('favorite')
+        .delete()
+        .eq('user_id', userId)
+        .eq('product_id', productId);
 
-    if (error) {
-      // Rollback
-      console.error('[useFavorites] Erreur lors de la suppression du favori :', error.message);
-      setFavorites((prev) => [...prev, productId]);
-    }
-  }, [userId]);
+      if (error) {
+        // Rollback
+        console.error('[useFavorites] Erreur lors de la suppression du favori :', error.message);
+        setFavorites((prev) => [...prev, productId]);
+      }
+    },
+    [userId],
+  );
 
   // ─── isFavorited ─────────────────────────────────────────────────────────
 
   const isFavorited = useCallback(
     (productId: string) => favorites.includes(productId),
-    [favorites]
+    [favorites],
   );
 
   return { favorites, loading, addFavorite, removeFavorite, isFavorited, refresh: fetchFavorites };

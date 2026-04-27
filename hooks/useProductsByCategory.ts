@@ -40,7 +40,8 @@ export function useProductsByCategory(): UseProductsByCategoryResult {
     // Une seule requête : produits + catégorie jointe via foreign key
     const { data, error: supabaseError } = await supabase
       .from('product')
-      .select(`
+      .select(
+        `
         id,
         name,
         price,
@@ -52,7 +53,8 @@ export function useProductsByCategory(): UseProductsByCategoryResult {
           id,
           name
         )
-      `)
+      `,
+      )
       .eq('is_active', true)
       .order('name');
 
@@ -70,7 +72,7 @@ export function useProductsByCategory(): UseProductsByCategoryResult {
     const grouped: Record<string, ProductSection> = {};
 
     rows.forEach((product) => {
-      const catId   = product.category?.id   ?? '__none__';
+      const catId = product.category?.id ?? '__none__';
       const catName = product.category?.name ?? 'Uncategorized';
 
       if (!grouped[catId]) {
@@ -78,19 +80,19 @@ export function useProductsByCategory(): UseProductsByCategoryResult {
       }
 
       grouped[catId].data.push({
-        id:          product.id,
-        name:        product.name,
-        price:       product.price,
+        id: product.id,
+        name: product.name,
+        price: product.price,
         description: product.description,
-        image_url:   product.image_url,
+        image_url: product.image_url,
         category_id: product.category_id,
-        is_active:   product.is_active,
+        is_active: product.is_active,
       });
     });
 
     // Trier les sections par nom de catégorie
     const sortedSections = Object.values(grouped).sort((a, b) =>
-      a.category_name.localeCompare(b.category_name)
+      a.category_name.localeCompare(b.category_name),
     );
 
     setSections(sortedSections);

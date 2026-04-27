@@ -29,7 +29,7 @@ export function useCategories(): UseCategoriesResult {
       const { data, error: supabaseError } = await supabase
         .from('category')
         .select('*')
-        .is('parent_id', null);   // catégories racines uniquement
+        .is('parent_id', null); // catégories racines uniquement
 
       if (!isMounted) return;
 

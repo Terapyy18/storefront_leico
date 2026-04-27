@@ -91,8 +91,13 @@ export default function Products() {
     setRefreshing(false);
   }
 
-  useEffect(() => { fetchAll(); }, []);
-  const onRefresh = useCallback(() => { setRefreshing(true); fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAll();
+  }, []);
 
   // ── Ouvrir modal ───────────────────────────────────────────────────────────
 
@@ -137,7 +142,9 @@ export default function Products() {
         name: form.name.trim(),
         description: form.description.trim(),
         price: parseFloat(form.price.replace(',', '.')),
-        image_url: form.image_url.trim() || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
+        image_url:
+          form.image_url.trim() ||
+          'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
         is_active: form.is_active,
         category_id: form.category_id,
       };
@@ -153,19 +160,21 @@ export default function Products() {
         productId = data.id;
       }
 
-      const validVariants = form.variants.filter(v => v.size.trim() || v.color.trim());
+      const validVariants = form.variants.filter((v) => v.size.trim() || v.color.trim());
 
       if (editingId) {
         await supabase.from('product_variant').delete().eq('product_id', productId!);
       }
 
       if (validVariants.length > 0) {
-        const variantPayload = validVariants.map(v => ({
+        const variantPayload = validVariants.map((v) => ({
           product_id: productId!,
           size: v.size.trim(),
           color: v.color.trim(),
           stock: Number(v.stock) || 0,
-          sku: v.sku.trim() || `${form.name.slice(0, 3).toUpperCase()}-${v.size}-${v.color}`.toUpperCase(),
+          sku:
+            v.sku.trim() ||
+            `${form.name.slice(0, 3).toUpperCase()}-${v.size}-${v.color}`.toUpperCase(),
         }));
         const { error } = await supabase.from('product_variant').insert(variantPayload);
         if (error) throw error;
@@ -183,20 +192,21 @@ export default function Products() {
   // ── Supprimer avec LOGS ───────────────────────────────────────────────────
 
   async function handleDelete(id: string, name: string) {
-  // Sur web, Alert.alert ne fonctionne pas — on utilise window.confirm
-    const confirmed = Platform.OS === 'web'
-      ? window.confirm(`Supprimer "${name}" ?`)
-      : await new Promise<boolean>(resolve =>
-          Alert.alert('Supprimer', `Supprimer "${name}" ?`, [
-            { text: 'Annuler',   style: 'cancel',      onPress: () => resolve(false) },
-            { text: 'Supprimer', style: 'destructive',  onPress: () => resolve(true)  },
-          ])
-        );
+    // Sur web, Alert.alert ne fonctionne pas — on utilise window.confirm
+    const confirmed =
+      Platform.OS === 'web'
+        ? window.confirm(`Supprimer "${name}" ?`)
+        : await new Promise<boolean>((resolve) =>
+            Alert.alert('Supprimer', `Supprimer "${name}" ?`, [
+              { text: 'Annuler', style: 'cancel', onPress: () => resolve(false) },
+              { text: 'Supprimer', style: 'destructive', onPress: () => resolve(true) },
+            ]),
+          );
 
     if (!confirmed) return;
 
     const previous = [...products];
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setProducts((prev) => prev.filter((p) => p.id !== id));
 
     try {
       const { data: variants } = await supabase
@@ -204,7 +214,7 @@ export default function Products() {
         .select('id')
         .eq('product_id', id);
 
-      const variantIds = variants?.map(v => v.id) ?? [];
+      const variantIds = variants?.map((v) => v.id) ?? [];
 
       if (variantIds.length > 0) {
         await supabase.from('order_item').delete().in('variant_id', variantIds);
@@ -214,7 +224,6 @@ export default function Products() {
 
       const { error } = await supabase.from('product').delete().eq('id', id);
       if (error) throw error;
-
     } catch (e: any) {
       setProducts(previous);
       alert('Erreur : ' + e.message); // alert() natif fonctionne sur web
@@ -223,7 +232,7 @@ export default function Products() {
   // ── Variants helpers ───────────────────────────────────────────────────────
 
   function updateVariant(index: number, field: keyof Variant, value: string) {
-    setForm(f => {
+    setForm((f) => {
       const variants = [...f.variants];
       variants[index] = { ...variants[index], [field]: value };
       return { ...f, variants };
@@ -231,11 +240,11 @@ export default function Products() {
   }
 
   function addVariant() {
-    setForm(f => ({ ...f, variants: [...f.variants, { ...EMPTY_VARIANT }] }));
+    setForm((f) => ({ ...f, variants: [...f.variants, { ...EMPTY_VARIANT }] }));
   }
 
   function removeVariant(index: number) {
-    setForm(f => ({
+    setForm((f) => ({
       ...f,
       variants: f.variants.filter((_, i) => i !== index),
     }));
@@ -243,9 +252,7 @@ export default function Products() {
 
   // ── Filtre ─────────────────────────────────────────────────────────────────
 
-  const filtered = products.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   // ── Rendu ──────────────────────────────────────────────────────────────────
 
@@ -259,7 +266,6 @@ export default function Products() {
 
   return (
     <View style={styles.container}>
-
       {/* Top bar */}
       <View style={styles.topBar}>
         <View style={styles.searchWrap}>
@@ -285,7 +291,7 @@ export default function Products() {
       {/* Liste */}
       <FlatList
         data={filtered}
-        keyExtractor={p => p.id}
+        keyExtractor={(p) => p.id}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ff4757" />
@@ -297,14 +303,16 @@ export default function Products() {
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View style={[styles.activeDot, { backgroundColor: item.is_active ? '#10b981' : '#333' }]} />
+            <View
+              style={[styles.activeDot, { backgroundColor: item.is_active ? '#10b981' : '#333' }]}
+            />
 
             <View style={styles.cardBody}>
               <Text style={styles.cardName}>{item.name}</Text>
               <Text style={styles.cardMeta}>
                 {Number(item.price).toFixed(2)} €
-                {categories.find(c => c.id === item.category_id)
-                  ? '  ·  ' + categories.find(c => c.id === item.category_id)!.name
+                {categories.find((c) => c.id === item.category_id)
+                  ? '  ·  ' + categories.find((c) => c.id === item.category_id)!.name
                   : ''}
               </Text>
             </View>
@@ -312,13 +320,13 @@ export default function Products() {
             <TouchableOpacity style={styles.iconBtn} onPress={() => openEdit(item)}>
               <Ionicons name="pencil-outline" size={17} color="#888" />
             </TouchableOpacity>
-            
+
             {/* BOUTON SUPPRIMER CORRIGÉ */}
-            <TouchableOpacity 
-                style={[styles.iconBtn, styles.iconBtnDanger]} 
-                onPress={() => handleDelete(item.id, item.name)}
+            <TouchableOpacity
+              style={[styles.iconBtn, styles.iconBtnDanger]}
+              onPress={() => handleDelete(item.id, item.name)}
             >
-                <Ionicons name="trash-outline" size={17} color="#ff4757" />
+              <Ionicons name="trash-outline" size={17} color="#ff4757" />
             </TouchableOpacity>
           </View>
         )}
@@ -349,21 +357,41 @@ export default function Products() {
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <SectionLabel text="Informations" />
               <FieldLabel text="Nom *" />
-              <TextInput style={styles.input} placeholder="Ex : T-shirt oversize" value={form.name} onChangeText={v => setForm(f => ({ ...f, name: v }))} />
+              <TextInput
+                style={styles.input}
+                placeholder="Ex : T-shirt oversize"
+                value={form.name}
+                onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+              />
 
               <FieldLabel text="Description" />
-              <TextInput style={[styles.input, styles.textarea]} placeholder="Description..." multiline value={form.description} onChangeText={v => setForm(f => ({ ...f, description: v }))} />
+              <TextInput
+                style={[styles.input, styles.textarea]}
+                placeholder="Description..."
+                multiline
+                value={form.description}
+                onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+              />
 
               <View style={styles.row2}>
                 <View style={{ flex: 1 }}>
                   <FieldLabel text="Prix (€) *" />
-                  <TextInput style={styles.input} keyboardType="decimal-pad" value={form.price} onChangeText={v => setForm(f => ({ ...f, price: v }))} />
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="decimal-pad"
+                    value={form.price}
+                    onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
+                  />
                 </View>
                 <View style={{ width: 12 }} />
                 <View style={{ flex: 1 }}>
                   <FieldLabel text="Actif" />
                   <View style={styles.switchBox}>
-                    <Switch value={form.is_active} onValueChange={v => setForm(f => ({ ...f, is_active: v }))} trackColor={{ false: '#1f1f1f', true: '#ff4757' }} />
+                    <Switch
+                      value={form.is_active}
+                      onValueChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
+                      trackColor={{ false: '#1f1f1f', true: '#ff4757' }}
+                    />
                     <Text style={styles.switchLabel}>{form.is_active ? 'Visible' : 'Masqué'}</Text>
                   </View>
                 </View>
@@ -371,9 +399,17 @@ export default function Products() {
 
               <SectionLabel text="Catégorie" />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-                {categories.map(c => (
-                  <TouchableOpacity key={c.id} style={[styles.chip, form.category_id === c.id && styles.chipActive]} onPress={() => setForm(f => ({ ...f, category_id: c.id }))}>
-                    <Text style={[styles.chipText, form.category_id === c.id && styles.chipTextActive]}>{c.name}</Text>
+                {categories.map((c) => (
+                  <TouchableOpacity
+                    key={c.id}
+                    style={[styles.chip, form.category_id === c.id && styles.chipActive]}
+                    onPress={() => setForm((f) => ({ ...f, category_id: c.id }))}
+                  >
+                    <Text
+                      style={[styles.chipText, form.category_id === c.id && styles.chipTextActive]}
+                    >
+                      {c.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -391,34 +427,68 @@ export default function Products() {
                   <View style={styles.variantCardHeader}>
                     <Text style={styles.variantCardTitle}>Variant {i + 1}</Text>
                     {form.variants.length > 1 && (
-                      <TouchableOpacity onPress={() => removeVariant(i)}><Ionicons name="close-circle-outline" size={18} color="#555" /></TouchableOpacity>
+                      <TouchableOpacity onPress={() => removeVariant(i)}>
+                        <Ionicons name="close-circle-outline" size={18} color="#555" />
+                      </TouchableOpacity>
                     )}
                   </View>
                   <View style={styles.row2}>
                     <View style={{ flex: 1 }}>
-                      <FieldLabel text="Taille" /><TextInput style={styles.input} value={v.size} onChangeText={val => updateVariant(i, 'size', val)} />
+                      <FieldLabel text="Taille" />
+                      <TextInput
+                        style={styles.input}
+                        value={v.size}
+                        onChangeText={(val) => updateVariant(i, 'size', val)}
+                      />
                     </View>
                     <View style={{ width: 10 }} />
                     <View style={{ flex: 1 }}>
-                      <FieldLabel text="Couleur" /><TextInput style={styles.input} value={v.color} onChangeText={val => updateVariant(i, 'color', val)} />
+                      <FieldLabel text="Couleur" />
+                      <TextInput
+                        style={styles.input}
+                        value={v.color}
+                        onChangeText={(val) => updateVariant(i, 'color', val)}
+                      />
                     </View>
                   </View>
                   <View style={styles.row2}>
                     <View style={{ flex: 1 }}>
-                      <FieldLabel text="Stock" /><TextInput style={styles.input} keyboardType="number-pad" value={String(v.stock || '')} onChangeText={val => updateVariant(i, 'stock', val)} />
+                      <FieldLabel text="Stock" />
+                      <TextInput
+                        style={styles.input}
+                        keyboardType="number-pad"
+                        value={String(v.stock || '')}
+                        onChangeText={(val) => updateVariant(i, 'stock', val)}
+                      />
                     </View>
                     <View style={{ width: 10 }} />
                     <View style={{ flex: 1 }}>
-                      <FieldLabel text="SKU" /><TextInput style={styles.input} value={v.sku} autoCapitalize="characters" onChangeText={val => updateVariant(i, 'sku', val)} />
+                      <FieldLabel text="SKU" />
+                      <TextInput
+                        style={styles.input}
+                        value={v.sku}
+                        autoCapitalize="characters"
+                        onChangeText={(val) => updateVariant(i, 'sku', val)}
+                      />
                     </View>
                   </View>
                 </View>
               ))}
 
-              <TouchableOpacity style={[styles.btnSave, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnSaveText}>{editingId ? 'Enregistrer' : 'Créer'}</Text>}
+              <TouchableOpacity
+                style={[styles.btnSave, saving && { opacity: 0.6 }]}
+                onPress={handleSave}
+                disabled={saving}
+              >
+                {saving ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.btnSaveText}>{editingId ? 'Enregistrer' : 'Créer'}</Text>
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalVisible(false)}><Text style={styles.btnCancelText}>Annuler</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalVisible(false)}>
+                <Text style={styles.btnCancelText}>Annuler</Text>
+              </TouchableOpacity>
               <View style={{ height: 40 }} />
             </ScrollView>
           </View>
@@ -431,58 +501,213 @@ export default function Products() {
 // ─── Petits composants ────────────────────────────────────────────────────────
 
 function SectionLabel({ text }: { text: string }) {
-  return <Text style={{ fontSize: 11, color: '#555', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginTop: 24, marginBottom: 12 }}>{text}</Text>;
+  return (
+    <Text
+      style={{
+        fontSize: 11,
+        color: '#555',
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginTop: 24,
+        marginBottom: 12,
+      }}
+    >
+      {text}
+    </Text>
+  );
 }
 
 function FieldLabel({ text }: { text: string }) {
-  return <Text style={{ fontSize: 12, color: '#555', fontWeight: '600', marginBottom: 6, letterSpacing: 0.3 }}>{text}</Text>;
+  return (
+    <Text
+      style={{
+        fontSize: 12,
+        color: '#555',
+        fontWeight: '600',
+        marginBottom: 6,
+        letterSpacing: 0.3,
+      }}
+    >
+      {text}
+    </Text>
+  );
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const S = { bg: '#FBFCFD', surface: '#FFFFFF', border: '#F2F2F7', text: '#1C1C1E', muted: '#8E8E93', accent: '#007AFF', success: '#10b981' };
+const S = {
+  bg: '#FBFCFD',
+  surface: '#FFFFFF',
+  border: '#F2F2F7',
+  text: '#1C1C1E',
+  muted: '#8E8E93',
+  accent: '#007AFF',
+  success: '#10b981',
+};
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: S.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: S.bg },
-  topBar: { flexDirection: 'row', padding: 12, gap: 10, borderBottomWidth: 1, borderColor: S.border },
-  searchWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: S.surface, borderRadius: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: S.border },
+  topBar: {
+    flexDirection: 'row',
+    padding: 12,
+    gap: 10,
+    borderBottomWidth: 1,
+    borderColor: S.border,
+  },
+  searchWrap: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: S.surface,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: S.border,
+  },
   searchInput: { flex: 1, height: 42, color: S.text, fontSize: 14 },
-  btnAdd: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: S.accent, borderRadius: 10, paddingHorizontal: 14, height: 42 },
+  btnAdd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: S.accent,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    height: 42,
+  },
   btnAddText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  count: { fontSize: 11, color: '#444', paddingHorizontal: 16, paddingVertical: 10, fontWeight: '700', textTransform: 'uppercase' },
+  count: {
+    fontSize: 11,
+    color: '#444',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
   list: { padding: 12, paddingTop: 0, gap: 8, paddingBottom: 100 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: S.surface, borderRadius: 14, padding: 14, borderWidth: 1, borderColor: S.border, gap: 10 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: S.surface,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: S.border,
+    gap: 10,
+  },
   activeDot: { width: 8, height: 8, borderRadius: 4 },
   cardBody: { flex: 1, gap: 4 },
   cardName: { fontSize: 15, fontWeight: '700', color: S.text },
   cardMeta: { fontSize: 12, color: S.muted },
-  iconBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#1a1a1a', justifyContent: 'center', alignItems: 'center' },
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#1a1a1a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   iconBtnDanger: { backgroundColor: '#ff47571a' },
   empty: { alignItems: 'center', paddingVertical: 60 },
   emptyText: { color: '#333', fontSize: 14 },
-  fab: { position: 'absolute', bottom: 28, right: 20, width: 60, height: 60, borderRadius: 30, backgroundColor: S.accent, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  fab: {
+    position: 'absolute',
+    bottom: 28,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: S.accent,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+  },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
-  sheet: { backgroundColor: '#111', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: '93%', marginTop: 'auto' },
-  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+  sheet: {
+    backgroundColor: '#111',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    maxHeight: '93%',
+    marginTop: 'auto',
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   sheetTitle: { fontSize: 20, fontWeight: '800', color: S.text },
-  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#1f1f1f', justifyContent: 'center', alignItems: 'center' },
-  input: { backgroundColor: S.surface, borderRadius: 10, padding: 13, color: S.text, fontSize: 14, borderWidth: 1, borderColor: S.border, marginBottom: 4 },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1f1f1f',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  input: {
+    backgroundColor: S.surface,
+    borderRadius: 10,
+    padding: 13,
+    color: S.text,
+    fontSize: 14,
+    borderWidth: 1,
+    borderColor: S.border,
+    marginBottom: 4,
+  },
   textarea: { height: 80, textAlignVertical: 'top' },
   row2: { flexDirection: 'row', marginBottom: 4 },
-  switchBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: S.surface, borderRadius: 10, borderWidth: 1, borderColor: S.border, padding: 10, height: 46 },
+  switchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: S.surface,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: S.border,
+    padding: 10,
+    height: 46,
+  },
   switchLabel: { color: S.muted, fontSize: 13, fontWeight: '600' },
   chips: { marginBottom: 4 },
-  chip: { borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8, backgroundColor: S.surface, borderWidth: 1, borderColor: S.border, marginRight: 8 },
+  chip: {
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: S.surface,
+    borderWidth: 1,
+    borderColor: S.border,
+    marginRight: 8,
+  },
   chipActive: { backgroundColor: S.accent, borderColor: S.accent },
   chipText: { color: S.muted, fontSize: 13, fontWeight: '600' },
   chipTextActive: { color: '#fff' },
   variantsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   btnAddVariant: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   btnAddVariantText: { color: S.accent, fontSize: 13, fontWeight: '700' },
-  variantCard: { backgroundColor: '#0a0a0a', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#252525' },
-  variantCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  variantCard: {
+    backgroundColor: '#0a0a0a',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#252525',
+  },
+  variantCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   variantCardTitle: { fontSize: 12, color: S.muted, fontWeight: '700', textTransform: 'uppercase' },
-  btnSave: { backgroundColor: S.accent, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 28 },
+  btnSave: {
+    backgroundColor: S.accent,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 28,
+  },
   btnSaveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   btnCancel: { borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 },
   btnCancelText: { color: '#444', fontSize: 15 },

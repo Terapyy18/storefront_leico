@@ -31,37 +31,40 @@ export function useProducts(categoryId?: string | null): UseProductsResult {
   const pageRef = useRef(0);
   const loadingRef = useRef(false);
 
-  const fetchPage = useCallback(async (page: number) => {
-    if (loadingRef.current) return;
+  const fetchPage = useCallback(
+    async (page: number) => {
+      if (loadingRef.current) return;
 
-    loadingRef.current = true;
-    setLoading(true);
-    setError(null);
+      loadingRef.current = true;
+      setLoading(true);
+      setError(null);
 
-    let query = supabase
-      .from('product')
-      .select('*')
-      .eq('is_active', true)
-      .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      let query = supabase
+        .from('product')
+        .select('*')
+        .eq('is_active', true)
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
 
-    if (categoryId) {
-      query = query.eq('category_id', categoryId);
-    }
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      }
 
-    const { data, error: supabaseError } = await query;
+      const { data, error: supabaseError } = await query;
 
-    if (supabaseError) {
-      console.error('[useProducts] Erreur fetch :', supabaseError.message);
-      setError(supabaseError.message);
-    } else {
-      const newItems = (data ?? []) as Product[];
-      setProducts((prev) => (page === 0 ? newItems : [...prev, ...newItems]));
-      setHasMore(newItems.length === PAGE_SIZE);
-    }
+      if (supabaseError) {
+        console.error('[useProducts] Erreur fetch :', supabaseError.message);
+        setError(supabaseError.message);
+      } else {
+        const newItems = (data ?? []) as Product[];
+        setProducts((prev) => (page === 0 ? newItems : [...prev, ...newItems]));
+        setHasMore(newItems.length === PAGE_SIZE);
+      }
 
-    loadingRef.current = false;
-    setLoading(false);
-  }, [categoryId]);
+      loadingRef.current = false;
+      setLoading(false);
+    },
+    [categoryId],
+  );
 
   // Repart de la page 0 à chaque changement de catégorie (ou au mount)
   useEffect(() => {

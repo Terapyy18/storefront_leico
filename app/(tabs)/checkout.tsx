@@ -33,13 +33,9 @@ export default function Checkout() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, gap: 20 }}>
-      <Text style={{ fontSize: 24, fontWeight: '700', color: '#111' }}>
-        Checkout
-      </Text>
+      <Text style={{ fontSize: 24, fontWeight: '700', color: '#111' }}>Checkout</Text>
 
-      <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>
-        Order Summary
-      </Text>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>Order Summary</Text>
       {items.map((item) => (
         <View
           key={item.variant_id}
@@ -57,9 +53,7 @@ export default function Checkout() {
         Total: €{totalPrice.toFixed(2)}
       </Text>
 
-      <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>
-        Shipping Information
-      </Text>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: '#333' }}>Shipping Information</Text>
 
       <TextInput
         placeholder="Full name"
@@ -68,8 +62,13 @@ export default function Checkout() {
         autoCapitalize="words"
         editable={!loading}
         style={{
-          borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
-          padding: 12, fontSize: 14, color: '#111', backgroundColor: '#fafafa',
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 8,
+          padding: 12,
+          fontSize: 14,
+          color: '#111',
+          backgroundColor: '#fafafa',
         }}
       />
       <TextInput
@@ -80,8 +79,13 @@ export default function Checkout() {
         autoCapitalize="none"
         editable={!loading}
         style={{
-          borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
-          padding: 12, fontSize: 14, color: '#111', backgroundColor: '#fafafa',
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 8,
+          padding: 12,
+          fontSize: 14,
+          color: '#111',
+          backgroundColor: '#fafafa',
         }}
       />
       <TextInput
@@ -90,8 +94,13 @@ export default function Checkout() {
         onChangeText={setAddress}
         editable={!loading}
         style={{
-          borderWidth: 1, borderColor: '#ddd', borderRadius: 8,
-          padding: 12, fontSize: 14, color: '#111', backgroundColor: '#fafafa',
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 8,
+          padding: 12,
+          fontSize: 14,
+          color: '#111',
+          backgroundColor: '#fafafa',
         }}
       />
 
