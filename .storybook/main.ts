@@ -11,6 +11,13 @@ const config: StorybookConfig = {
   },
   viteFinal: (viteConfig) =>
     mergeConfig(viteConfig, {
+      // expo/tsconfig.base sets "jsx":"react-native" which esbuild treats as
+      // the classic transform (React.createElement). Override to automatic so
+      // files without `import React` work correctly in the browser preview.
+      esbuild: {
+        jsx: 'automatic',
+        jsxImportSource: 'react',
+      },
       resolve: {
         alias: {
           'react-native': 'react-native-web',
