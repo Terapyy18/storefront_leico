@@ -25,9 +25,7 @@ export default function OrderConfirmation() {
         Thank you for your purchase
       </Text>
 
-      <Text style={{ fontSize: 13, color: '#888', textAlign: 'center' }}>
-        Order ID: {orderId}
-      </Text>
+      <Text style={{ fontSize: 13, color: '#888', textAlign: 'center' }}>Order ID: {orderId}</Text>
 
       <Text style={{ fontSize: 14, color: '#888', textAlign: 'center' }}>
         Check your email for order details
@@ -43,9 +41,7 @@ export default function OrderConfirmation() {
           marginTop: 8,
         }}
       >
-        <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-          Continue Shopping
-        </Text>
+        <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Continue Shopping</Text>
       </Pressable>
     </ScrollView>
   );

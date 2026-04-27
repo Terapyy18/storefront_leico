@@ -10,11 +10,7 @@ export function useMockCheckout() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const processPayment = async (
-    fullName: string,
-    email: string,
-    address: string
-  ) => {
+  const processPayment = async (fullName: string, email: string, address: string) => {
     try {
       setLoading(true);
 
@@ -44,9 +40,7 @@ export function useMockCheckout() {
         unit_price: item.product_price,
       }));
 
-      const { error: itemsError } = await supabase
-        .from('order_item')
-        .insert(orderItems);
+      const { error: itemsError } = await supabase.from('order_item').insert(orderItems);
 
       if (itemsError) throw itemsError;
 

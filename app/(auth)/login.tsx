@@ -11,11 +11,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { COLORS, styles } from './login.style';
+import { COLORS, styles } from './_login.style';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -64,9 +62,18 @@ export default function LoginScreen() {
   async function handleLogin() {
     setError(null);
 
-    if (!email.trim()) { setError('L\'email est requis.'); return; }
-    if (!isValidEmail(email)) { setError('Format d\'email invalide.'); return; }
-    if (password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractÃ¨res.'); return; }
+    if (!email.trim()) {
+      setError("L'email est requis.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError("Format d'email invalide.");
+      return;
+    }
+    if (password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractÃ¨res.');
+      return;
+    }
 
     setLoading(true);
     const { error: authError } = await signIn(email.trim(), password);
@@ -84,18 +91,13 @@ export default function LoginScreen() {
     }
   }
 
-
   return (
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-
           {/* En-tête */}
           <View style={styles.header}>
             <View style={styles.logo}>
@@ -142,26 +144,25 @@ export default function LoginScreen() {
             disabled={loading}
             style={({ pressed }) => [
               styles.btn,
-              pressed  && styles.btnPressed,
-              loading  && styles.btnDisabled,
+              pressed && styles.btnPressed,
+              loading && styles.btnDisabled,
             ]}
           >
-            {loading
-              ? <ActivityIndicator color="#FFF" />
-              : <Text style={styles.btnText}>Se connecter</Text>
-            }
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.btnText}>Se connecter</Text>
+            )}
           </Pressable>
 
           {/* Lien inscription */}
           <View style={styles.signupRow}>
             <Pressable onPress={() => router.push('/signup')} disabled={loading}>
               <Text style={styles.signupText}>
-                Pas encore de compte ?{' '}
-                <Text style={styles.signupLink}>S&apos;inscrire</Text>
+                Pas encore de compte ? <Text style={styles.signupLink}>S&apos;inscrire</Text>
               </Text>
             </Pressable>
           </View>
-
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

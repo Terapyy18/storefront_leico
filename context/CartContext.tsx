@@ -4,7 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type CartItem = {
-  variant_id: string;    // product_variant id (clé unique du panier)
+  variant_id: string; // product_variant id (clé unique du panier)
   product_id: string;
   product_name: string;
   product_price: number;
@@ -69,10 +69,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.product_price * item.quantity,
-    0
-  );
+  const totalPrice = items.reduce((sum, item) => sum + item.product_price * item.quantity, 0);
 
   // ── Actions ──────────────────────────────────────────────────────────────────
 
@@ -84,7 +81,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return prev.map((i) =>
           i.variant_id === newItem.variant_id
             ? { ...i, quantity: i.quantity + newItem.quantity }
-            : i
+            : i,
         );
       }
       return [...prev, newItem];
@@ -101,11 +98,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       setItems((prev) => prev.filter((i) => i.variant_id !== variantId));
       return;
     }
-    setItems((prev) =>
-      prev.map((i) =>
-        i.variant_id === variantId ? { ...i, quantity: qty } : i
-      )
-    );
+    setItems((prev) => prev.map((i) => (i.variant_id === variantId ? { ...i, quantity: qty } : i)));
   }, []);
 
   const clearCart = useCallback(() => {
@@ -126,7 +119,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 export function useCart(): CartContextType {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error('useCart must be used within a CartProvider. Wrap your app with <CartProvider>.');
+    throw new Error(
+      'useCart must be used within a CartProvider. Wrap your app with <CartProvider>.',
+    );
   }
   return context;
 }

@@ -11,16 +11,14 @@ function ProductCard({ product, onPress }: ProductCardProps) {
   return (
     <Pressable onPress={() => onPress(product.id)} style={styles.card}>
       {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: product.image_url }} style={styles.image} resizeMode="cover" />
       ) : (
         <View style={[styles.image, styles.placeholder]} />
       )}
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={1}>{product.name}</Text>
+        <Text style={styles.title} numberOfLines={1}>
+          {product.name}
+        </Text>
         <Text style={styles.price}>${product.price.toFixed(2)}</Text>
         {product.description ? (
           <Text style={styles.description} numberOfLines={2}>

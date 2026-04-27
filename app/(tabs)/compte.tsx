@@ -1,17 +1,9 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, styles } from './style.compte';
-
+import { COLORS, styles } from './_style.compte';
 
 import { useOrders } from '@/hooks/useOrders';
 
@@ -78,26 +70,28 @@ function OrderHistory() {
         orders.map((order, i) => {
           // Format date and ref
           const dateStr = new Date(order.created_at).toLocaleDateString('fr-FR', {
-            day: 'numeric', month: 'long', year: 'numeric'
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
           });
           const refStr = `#${order.id.split('-')[0].toUpperCase()}`;
-          
+
           // Format status
           const statusMap: Record<string, string> = {
-            'pending': 'En cours',
-            'completed': 'Livré',
-            'shipped': 'Expédié',
-            'cancelled': 'Annulé'
+            pending: 'En cours',
+            completed: 'Livré',
+            shipped: 'Expédié',
+            cancelled: 'Annulé',
           };
           const displayStatus = statusMap[order.status] || order.status;
 
           return (
-            <Pressable 
-              key={order.id} 
+            <Pressable
+              key={order.id}
               style={({ pressed }) => [
                 styles.orderItem,
                 i === orders.length - 1 && { borderBottomWidth: 0 },
-                pressed && { opacity: 0.6 }
+                pressed && { opacity: 0.6 },
               ]}
               onPress={() => router.push(`/orders/${order.id}`)}
             >
@@ -125,12 +119,7 @@ function EditEmail({ currentEmail }: { currentEmail: string }) {
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Modifier l&apos;adresse email</Text>
-      <Field
-        label="Email actuel"
-        icon="✉"
-        value={currentEmail}
-        editable={false}
-      />
+      <Field label="Email actuel" icon="✉" value={currentEmail} editable={false} />
       <Field
         label="Nouvel email"
         icon="✉"
@@ -143,7 +132,9 @@ function EditEmail({ currentEmail }: { currentEmail: string }) {
       />
       <Pressable
         style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
-        onPress={() => { /* TODO: appel Supabase updateUser */ }}
+        onPress={() => {
+          /* TODO: appel Supabase updateUser */
+        }}
       >
         <Text style={styles.btnPrimaryText}>Mettre à jour l&apos;email</Text>
       </Pressable>
@@ -154,7 +145,7 @@ function EditEmail({ currentEmail }: { currentEmail: string }) {
 // ─── Section : modifier le mot de passe ──────────────────────────────────────
 
 function EditPassword() {
-  const [newPassword, setNewPassword]         = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   return (
@@ -178,7 +169,9 @@ function EditPassword() {
       />
       <Pressable
         style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
-        onPress={() => { /* TODO: appel Supabase updateUser */ }}
+        onPress={() => {
+          /* TODO: appel Supabase updateUser */
+        }}
       >
         <Text style={styles.btnPrimaryText}>Mettre à jour le mot de passe</Text>
       </Pressable>
@@ -188,11 +181,9 @@ function EditPassword() {
 
 // ─── Écran principal ──────────────────────────────────────────────────────────
 
-
 export default function CompteScreen() {
   const router = useRouter();
   const { user, loading, signOut } = useAuth();
-
 
   // ── Chargement ──────────────────────────────────────────────────
   if (loading) {
@@ -235,14 +226,11 @@ export default function CompteScreen() {
   }
 
   // ── Connecté ──────────────────────────────────────────────────────
-  const initials = user.email
-    ? user.email.slice(0, 2).toUpperCase()
-    : '?';
+  const initials = user.email ? user.email.slice(0, 2).toUpperCase() : '?';
 
   return (
     <SafeAreaView style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll}>
-
         {/* Profil */}
         <View style={styles.profileCard}>
           <View style={styles.avatar}>
@@ -270,7 +258,6 @@ export default function CompteScreen() {
         >
           <Text style={styles.btnDangerText}>Se déconnecter</Text>
         </Pressable>
-
       </ScrollView>
     </SafeAreaView>
   );

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Session } from '@supabase/supabase-js';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
 import { clearSession, getStoredSession, saveSession } from '@/utils/storage';
@@ -38,16 +38,11 @@ describe('saveSession', () => {
     await saveSession(mockSession);
 
     expect(AsyncStorage.setItem).toHaveBeenCalledTimes(1);
-    expect(AsyncStorage.setItem).toHaveBeenCalledWith(
-      SESSION_KEY,
-      JSON.stringify(mockSession)
-    );
+    expect(AsyncStorage.setItem).toHaveBeenCalledWith(SESSION_KEY, JSON.stringify(mockSession));
   });
 
   it("ne lance pas d'erreur si AsyncStorage.setItem échoue", async () => {
-    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(
-      new Error('Storage full')
-    );
+    (AsyncStorage.setItem as jest.Mock).mockRejectedValueOnce(new Error('Storage full'));
 
     // Ne doit pas rejeter
     await expect(saveSession(mockSession)).resolves.toBeUndefined();
@@ -56,9 +51,7 @@ describe('saveSession', () => {
 
 describe('getStoredSession', () => {
   it('retourne la session désérialisée quand elle existe', async () => {
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(
-      JSON.stringify(mockSession)
-    );
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(JSON.stringify(mockSession));
 
     const result = await getStoredSession();
 
@@ -75,7 +68,7 @@ describe('getStoredSession', () => {
   });
 
   it('retourne null et log une erreur si le JSON est corrompu', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce('json-invalide{{{');
 
     const result = await getStoredSession();
@@ -95,9 +88,7 @@ describe('clearSession', () => {
   });
 
   it("ne lance pas d'erreur si AsyncStorage.removeItem échoue", async () => {
-    (AsyncStorage.removeItem as jest.Mock).mockRejectedValueOnce(
-      new Error('Disk error')
-    );
+    (AsyncStorage.removeItem as jest.Mock).mockRejectedValueOnce(new Error('Disk error'));
 
     await expect(clearSession()).resolves.toBeUndefined();
   });
@@ -111,9 +102,7 @@ describe('flux complet: save → get → clear', () => {
       stored = value;
       return Promise.resolve();
     });
-    (AsyncStorage.getItem as jest.Mock).mockImplementation(() =>
-      Promise.resolve(stored)
-    );
+    (AsyncStorage.getItem as jest.Mock).mockImplementation(() => Promise.resolve(stored));
     (AsyncStorage.removeItem as jest.Mock).mockImplementation(() => {
       stored = null;
       return Promise.resolve();

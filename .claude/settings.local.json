@@ -1,7 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(awk '{print $NF}')",
+      "Bash(npm --version)",
+      "Bash(git checkout *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git restore *)",
+      "Bash(node -e \"const r = require\\('./node_modules/react-test-renderer/package.json'\\); console.log\\('react-test-renderer:', r.version\\)\")",
+      "Bash(node -e \"const rn = require\\('./node_modules/react-native/package.json'\\); console.log\\('react-native peerDependencies:', JSON.stringify\\(rn.peerDependencies\\)\\); console.log\\('react-native version:', rn.version\\);\")",
+      "Bash(node -e \"console.log\\('react:', require\\('./node_modules/react/package.json'\\).version\\); console.log\\('react-test-renderer:', require\\('./node_modules/react-test-renderer/package.json'\\).version\\);\")",
+      "Bash(npm test *)",
+      "Bash(node -e \"console.log\\('jest:', require\\('./node_modules/jest/package.json'\\).version\\); console.log\\('jest-environment-node:', require\\('./node_modules/jest-environment-node/package.json'\\).version\\); console.log\\('jest-expo:', require\\('./node_modules/jest-expo/package.json'\\).version\\);\")",
+      "Bash(node -e \"const src = require\\('fs'\\).readFileSync\\('./node_modules/jest-environment-node/build/index.js', 'utf8'\\).split\\('\\\\n'\\); console.log\\(src.slice\\(83,95\\).join\\('\\\\n'\\)\\);\")",
+      "Bash(node -e \"const p = require\\('./node_modules/jest-expo/jest-preset.js'\\); console.log\\(JSON.stringify\\(p, null, 2\\)\\);\")"
     ]
   }
 }

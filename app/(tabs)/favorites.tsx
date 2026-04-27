@@ -4,34 +4,17 @@ import type { Product } from '@/hooks/useProducts';
 import { supabase } from '@/services/supabaseClient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, styles } from './style.favorites';
+import { COLORS, styles } from './_style.favorites';
 
 // ─── Card favori ──────────────────────────────────────────────────────────────
 
-function FavoriteCard({
-  product,
-  onRemove,
-}: {
-  product: Product;
-  onRemove: () => void;
-}) {
+function FavoriteCard({ product, onRemove }: { product: Product; onRemove: () => void }) {
   return (
     <View style={styles.card}>
       {product.image_url ? (
-        <Image
-          source={{ uri: product.image_url }}
-          style={styles.image}
-          resizeMode="cover"
-        />
+        <Image source={{ uri: product.image_url }} style={styles.image} resizeMode="cover" />
       ) : (
         <View style={styles.imagePlaceholder}>
           <Text style={styles.imagePlaceholderText}>🧥</Text>
@@ -45,7 +28,9 @@ function FavoriteCard({
               <Text style={styles.categoryText}>{product.category}</Text>
             </View>
           ) : null}
-          <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
+          <Text style={styles.name} numberOfLines={2}>
+            {product.name}
+          </Text>
           {product.description ? (
             <Text style={styles.description} numberOfLines={2}>
               {product.description}
@@ -69,16 +54,21 @@ function FavoriteCard({
 export default function FavoritesScreen() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const { favorites, loading: favLoading, removeFavorite, refresh } = useFavorites(user?.id ?? null);
+  const {
+    favorites,
+    loading: favLoading,
+    removeFavorite,
+    refresh,
+  } = useFavorites(user?.id ?? null);
 
-  const [products, setProducts]               = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = useState(false);
 
   // Re-fetch favoris à chaque focus de l'onglet
   useFocusEffect(
     useCallback(() => {
       refresh();
-    }, [refresh])
+    }, [refresh]),
   );
 
   // Fetch les infos complètes des produits favoris quand la liste change
@@ -91,10 +81,7 @@ export default function FavoritesScreen() {
     const fetchFavoriteProducts = async () => {
       setProductsLoading(true);
 
-      const { data, error } = await supabase
-        .from('product')
-        .select('*')
-        .in('id', favorites);
+      const { data, error } = await supabase.from('product').select('*').in('id', favorites);
 
       if (error) {
         console.error('[FavoritesScreen] Erreur fetch produits favoris :', error.message);
@@ -172,7 +159,9 @@ export default function FavoritesScreen() {
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mes favoris</Text>
-        <Text style={styles.headerSub}>{products.length} article{products.length > 1 ? 's' : ''}</Text>
+        <Text style={styles.headerSub}>
+          {products.length} article{products.length > 1 ? 's' : ''}
+        </Text>
       </View>
 
       <FlatList
@@ -181,10 +170,7 @@ export default function FavoritesScreen() {
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <FavoriteCard
-            product={item}
-            onRemove={() => removeFavorite(item.id)}
-          />
+          <FavoriteCard product={item} onRemove={() => removeFavorite(item.id)} />
         )}
       />
     </SafeAreaView>
