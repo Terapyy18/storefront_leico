@@ -1,8 +1,8 @@
-import React, { createContext, useCallback, useEffect, useState } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabaseClient';
-import { saveSession, getStoredSession, clearSession } from '@/utils/storage';
 import type { AuthContextType } from '@/types';
+import { clearSession, getStoredSession, saveSession } from '@/utils/storage';
+import type { Session, User } from '@supabase/supabase-js';
+import React, { createContext, useCallback, useEffect, useState } from 'react';
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -76,5 +76,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
       {children}
     </AuthContext.Provider>
+
+    
   );
 }
+export const useAuth = () => {
+  const context = React.useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
+  }
+  return context;
+};
