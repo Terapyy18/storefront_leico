@@ -27,14 +27,6 @@ const CARDS = [
     iconBg: '#FEF3C7',
     route: '/admin/orders',
   },
-  {
-    title: 'Clients',
-    desc: 'Voir les comptes clients',
-    icon: 'people-outline' as const,
-    iconColor: '#10B981',
-    iconBg: '#D1FAE5',
-    route: '/admin/customers',
-  },
 ];
 
 export default function AdminHome() {
