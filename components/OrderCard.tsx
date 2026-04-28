@@ -22,11 +22,11 @@ export default function OrderCard({ order, onPress }: OrderCardProps) {
         <Text style={{ fontWeight: '600', color: '#111', fontSize: 14 }}>
           Order {order.id.slice(0, 8)}
         </Text>
-        <Text 
-          style={{ 
-            fontSize: 12, 
+        <Text
+          style={{
+            fontSize: 12,
             fontWeight: '600',
-            color: order.status === 'paid' ? '#27ae60' : '#f39c12' 
+            color: order.status === 'paid' ? '#27ae60' : '#f39c12',
           }}
         >
           {order.status.toUpperCase()}

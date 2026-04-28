@@ -13,9 +13,10 @@ import {
   ScrollView,
   Text,
   View,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, styles } from './style.product';
+import { COLORS, styles } from './_style.product';
 
 type ProductVariant = {
   id: string;
@@ -65,9 +66,11 @@ export default function ProductDetailScreen() {
         .eq('product_id', id);
 
       if (!variantError && variantData) {
-        const sortedVariants = (variantData as ProductVariant[]).sort((a, b) => a.size?.localeCompare(b.size || '') || 0);
+        const sortedVariants = (variantData as ProductVariant[]).sort(
+          (a, b) => a.size?.localeCompare(b.size || '') || 0,
+        );
         setVariants(sortedVariants);
-        const available = sortedVariants.find(v => v.stock > 0);
+        const available = sortedVariants.find((v) => v.stock > 0);
         if (available) {
           setSelectedVariantId(available.id);
         } else if (sortedVariants.length > 0) {
@@ -103,7 +106,11 @@ export default function ProductDetailScreen() {
 
   const handleFavoritePress = () => {
     if (!user) {
-      Alert.alert('Connexion requise', 'Connectez-vous pour ajouter aux favoris.');
+      if (Platform.OS === 'web') {
+        window.alert('Connectez-vous pour ajouter aux favoris.');
+      } else {
+        Alert.alert('Connexion requise', 'Connectez-vous pour ajouter aux favoris.');
+      }
       return;
     }
     if (favorited) {
@@ -115,13 +122,20 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (!user) {
-      Alert.alert('Connexion requise', 'Connectez-vous pour ajouter au panier.', [
-        { text: 'Annuler', style: 'cancel' },
-        { text: 'Connexion', onPress: () => router.push('/(auth)/login') },
-      ]);
+      if (Platform.OS === 'web') {
+        const ok = window.confirm(
+          'Connexion requise. Voulez-vous vous connecter pour ajouter au panier ?',
+        );
+        if (ok) router.push('/(auth)/login');
+      } else {
+        Alert.alert('Connexion requise', 'Connectez-vous pour ajouter au panier.', [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Connexion', onPress: () => router.push('/(auth)/login') },
+        ]);
+      }
       return;
     }
-    const variant = variants.find(v => v.id === selectedVariantId) || variants[0];
+    const variant = variants.find((v) => v.id === selectedVariantId) || variants[0];
     if (!variant || variant.stock <= 0) {
       Alert.alert('Indisponible', 'Ce produit est épuisé dans cette taille.');
       return;
@@ -154,7 +168,7 @@ export default function ProductDetailScreen() {
               <Ionicons name="image-outline" size={64} color={COLORS.muted} />
             </View>
           )}
-          
+
           <Pressable style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color={COLORS.primary} />
           </Pressable>
@@ -162,10 +176,8 @@ export default function ProductDetailScreen() {
 
         {/* Content */}
         <View style={styles.contentContainer}>
-          {product.category && (
-            <Text style={styles.categoryText}>{product.category}</Text>
-          )}
-          
+          {product.category && <Text style={styles.categoryText}>{product.category}</Text>}
+
           <View style={styles.titleRow}>
             <Text style={styles.productName}>{product.name}</Text>
             <Text style={styles.productPrice}>{product.price.toFixed(2)} €</Text>
@@ -192,10 +204,7 @@ export default function ProductDetailScreen() {
                       ]}
                     >
                       <Text
-                        style={[
-                          styles.variantChipText,
-                          selected && styles.variantChipTextSelected,
-                        ]}
+                        style={[styles.variantChipText, selected && styles.variantChipTextSelected]}
                       >
                         {v.size || v.color || 'Unique'}
                       </Text>
@@ -216,10 +225,7 @@ export default function ProductDetailScreen() {
               <Ionicons name="remove" size={20} color={COLORS.primary} />
             </Pressable>
             <Text style={styles.quantityValue}>{quantity}</Text>
-            <Pressable
-              style={styles.quantityBtn}
-              onPress={() => setQuantity((q) => q + 1)}
-            >
+            <Pressable style={styles.quantityBtn} onPress={() => setQuantity((q) => q + 1)}>
               <Ionicons name="add" size={20} color={COLORS.primary} />
             </Pressable>
           </View>
@@ -236,21 +242,15 @@ export default function ProductDetailScreen() {
 
       {/* Sticky Footer */}
       <View style={styles.footer}>
-        <Pressable
-          style={styles.btnFav}
-          onPress={handleFavoritePress}
-        >
-          <Ionicons 
-            name={favorited ? "heart" : "heart-outline"} 
-            size={26} 
-            color={favorited ? COLORS.error : COLORS.primary} 
+        <Pressable style={styles.btnFav} onPress={handleFavoritePress}>
+          <Ionicons
+            name={favorited ? 'heart' : 'heart-outline'}
+            size={26}
+            color={favorited ? COLORS.error : COLORS.primary}
           />
         </Pressable>
-        
-        <Pressable
-          style={styles.btnCart}
-          onPress={handleAddToCart}
-        >
+
+        <Pressable style={styles.btnCart} onPress={handleAddToCart}>
           <Text style={styles.btnCartText}>Ajouter au panier</Text>
         </Pressable>
       </View>

@@ -45,14 +45,9 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
-      <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
       <Stack.Screen
         name="orders/[id]"
         options={{ presentation: 'modal', headerShown: false, title: 'Order Details' }}
-      />
-      <Stack.Screen
-        name="modal"
-        options={{ presentation: 'modal', headerShown: true, title: 'Modal' }}
       />
     </Stack>
   );

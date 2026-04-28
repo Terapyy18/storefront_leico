@@ -11,7 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { COLORS, styles } from './style.signup';
+import { COLORS, styles } from './_style.signup';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -64,10 +64,22 @@ export default function SignupScreen() {
   async function handleSignup() {
     setError(null);
 
-    if (!email.trim()) { setError('L\'email est requis.'); return; }
-    if (!isValidEmail(email)) { setError('Format d\'email invalide.'); return; }
-    if (password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
-    if (password !== confirmPassword) { setError('Les mots de passe ne correspondent pas.'); return; }
+    if (!email.trim()) {
+      setError("L'email est requis.");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError("Format d'email invalide.");
+      return;
+    }
+    if (password.length < 6) {
+      setError('Le mot de passe doit contenir au moins 6 caractères.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Les mots de passe ne correspondent pas.');
+      return;
+    }
 
     setLoading(true);
     const { error: authError } = await signUp(email.trim(), password);
@@ -90,14 +102,11 @@ export default function SignupScreen() {
           </View>
           <Text style={styles.confirmTitle}>Vérifiez votre email</Text>
           <Text style={styles.confirmText}>
-            Un lien de confirmation a été envoyé à{' '}
-            <Text style={styles.confirmEmail}>{email}</Text>.{'\n'}
+            Un lien de confirmation a été envoyé à <Text style={styles.confirmEmail}>{email}</Text>.
+            {'\n'}
             Cliquez sur le lien pour activer votre compte, puis connectez-vous.
           </Text>
-          <Pressable
-            style={styles.confirmBtn}
-            onPress={() => router.push('/login')}
-          >
+          <Pressable style={styles.confirmBtn} onPress={() => router.push('/login')}>
             <Text style={styles.confirmBtnText}>Aller à la connexion</Text>
           </Pressable>
         </View>
@@ -111,12 +120,8 @@ export default function SignupScreen() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.card}>
-
           {/* En-tête */}
           <View style={styles.header}>
             <View style={styles.logo}>
@@ -173,26 +178,25 @@ export default function SignupScreen() {
             disabled={loading}
             style={({ pressed }) => [
               styles.btn,
-              pressed  && styles.btnPressed,
-              loading  && styles.btnDisabled,
+              pressed && styles.btnPressed,
+              loading && styles.btnDisabled,
             ]}
           >
-            {loading
-              ? <ActivityIndicator color="#FFF" />
-              : <Text style={styles.btnText}>S&apos;inscrire</Text>
-            }
+            {loading ? (
+              <ActivityIndicator color="#FFF" />
+            ) : (
+              <Text style={styles.btnText}>S&apos;inscrire</Text>
+            )}
           </Pressable>
 
           {/* Lien connexion */}
           <View style={styles.loginRow}>
             <Pressable onPress={() => router.push('/login')} disabled={loading}>
               <Text style={styles.loginText}>
-                Déjà un compte ?{' '}
-                <Text style={styles.loginLink}>Se connecter</Text>
+                Déjà un compte ? <Text style={styles.loginLink}>Se connecter</Text>
               </Text>
             </Pressable>
           </View>
-
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

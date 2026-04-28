@@ -12,7 +12,7 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'heart.fill': 'favorite',
-  'heart': 'favorite-border',
+  heart: 'favorite-border',
   'person.fill': 'person',
 } as IconMapping;
 

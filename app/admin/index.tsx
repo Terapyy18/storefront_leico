@@ -101,5 +101,5 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   cardTitle: { fontSize: 16, fontWeight: '700', color: '#1C1C1E' },
-  cardDesc:  { fontSize: 12, color: '#8E8E93', marginTop: 4 },
+  cardDesc: { fontSize: 12, color: '#8E8E93', marginTop: 4 },
 });

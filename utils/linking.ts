@@ -4,7 +4,7 @@ const prefix = Linking.createURL('/');
 
 export const linking = {
   prefixes: [prefix, 'app://'],
-  
+
   config: {
     screens: {
       // Auth screens
@@ -14,7 +14,7 @@ export const linking = {
           signup: 'signup',
         },
       },
-      
+
       // App screens
       '(tabs)': {
         screens: {
@@ -25,7 +25,7 @@ export const linking = {
           'order-confirmation': 'order-confirmation',
         },
       },
-      
+
       // Catch all
       '*': '*',
     },

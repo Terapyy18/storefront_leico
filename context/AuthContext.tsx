@@ -24,7 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Rafraîchissement en arrière-plan pour valider / renouveler le token
-      const { data: { session: refreshed } } = await supabase.auth.refreshSession();
+      const {
+        data: { session: refreshed },
+      } = await supabase.auth.refreshSession();
       if (isMounted) {
         setSession(refreshed);
         setUser(refreshed?.user ?? null);
@@ -41,7 +43,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     init();
 
     // 3. Écouter les changements d'état (login, logout, token refresh…)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session) {

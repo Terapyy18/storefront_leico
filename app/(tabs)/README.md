@@ -46,10 +46,7 @@ Chaque section dispose d'un bouton "View all →" qui navigue vers la liste comp
 
 ```ts
 // Chargement des catégories
-const { data: categories } = await supabase
-  .from('category')
-  .select('id, name')
-  .order('name');
+const { data: categories } = await supabase.from('category').select('id, name').order('name');
 
 // Chargement des produits actifs (paginés, PAGE_SIZE = 10)
 const { data: products } = await supabase
@@ -96,27 +93,27 @@ type Product = {
 
 #### Navigation sortante
 
-| Action                        | Destination                              |
-|-------------------------------|------------------------------------------|
-| Appui sur un `ProductCard`    | `/(tabs)/product/[id]`                   |
-| Appui "View all →"            | `/(tabs)/category/[id]` + params `name`  |
+| Action                     | Destination                             |
+| -------------------------- | --------------------------------------- |
+| Appui sur un `ProductCard` | `/(tabs)/product/[id]`                  |
+| Appui "View all →"         | `/(tabs)/category/[id]` + params `name` |
 
 #### États de l'écran
 
-| État       | Affichage                                  |
-|------------|--------------------------------------------|
-| `loading`  | `ActivityIndicator` centré                 |
-| `error`    | Message d'erreur + texte Supabase          |
-| Vide       | `"No products available."`                |
-| Normal     | `SectionList` avec `ProductCard`           |
+| État      | Affichage                         |
+| --------- | --------------------------------- |
+| `loading` | `ActivityIndicator` centré        |
+| `error`   | Message d'erreur + texte Supabase |
+| Vide      | `"No products available."`        |
+| Normal    | `SectionList` avec `ProductCard`  |
 
 #### Erreurs possibles
 
-| Cause                         | Comportement                              |
-|-------------------------------|-------------------------------------------|
-| Erreur réseau / Supabase       | `error` affiché dans l'UI                |
-| Aucun produit actif            | `ListEmptyComponent` visible             |
-| Catégories vides               | Aucune section affichée                  |
+| Cause                    | Comportement                 |
+| ------------------------ | ---------------------------- |
+| Erreur réseau / Supabase | `error` affiché dans l'UI    |
+| Aucun produit actif      | `ListEmptyComponent` visible |
+| Catégories vides         | Aucune section affichée      |
 
 ---
 
@@ -146,17 +143,14 @@ La suppression utilise des **mises à jour optimistes** (UI immédiate + rollbac
 const { data } = await supabase
   .from('favorite')
   .select('product_id')
-  .eq('user_id', "uuid-utilisateur");
+  .eq('user_id', 'uuid-utilisateur');
 // → [{ product_id: "prod-001" }, { product_id: "prod-003" }]
 ```
 
 **2. Fetch des produits favoris** (dans le composant) :
 
 ```ts
-const { data } = await supabase
-  .from('product')
-  .select('*')
-  .in('id', ["prod-001", "prod-003"]);
+const { data } = await supabase.from('product').select('*').in('id', ['prod-001', 'prod-003']);
 ```
 
 #### Exemple de réponse produits
@@ -164,24 +158,24 @@ const { data } = await supabase
 ```ts
 [
   {
-    id: "prod-001",
-    name: "T-Shirt Blanc",
+    id: 'prod-001',
+    name: 'T-Shirt Blanc',
     price: 29.99,
-    image_url: "https://...",
-    category_id: "cat-abc123",
+    image_url: 'https://...',
+    category_id: 'cat-abc123',
     is_active: true,
-    description: null
+    description: null,
   },
   {
-    id: "prod-003",
-    name: "Jean Slim",
+    id: 'prod-003',
+    name: 'Jean Slim',
     price: 59.99,
-    image_url: "https://...",
-    category_id: "cat-def456",
+    image_url: 'https://...',
+    category_id: 'cat-def456',
     is_active: true,
-    description: "Coupe slim, stretch"
-  }
-]
+    description: 'Coupe slim, stretch',
+  },
+];
 ```
 
 #### Supprimer un favori
@@ -191,8 +185,8 @@ const { data } = await supabase
 const { error } = await supabase
   .from('favorite')
   .delete()
-  .eq('user_id', "uuid-utilisateur")
-  .eq('product_id', "prod-001");
+  .eq('user_id', 'uuid-utilisateur')
+  .eq('product_id', 'prod-001');
 ```
 
 #### Ajouter un favori
@@ -201,26 +195,26 @@ const { error } = await supabase
 // Appel via useFavorites.addFavorite(productId) — depuis ProductDetailScreen
 const { error } = await supabase
   .from('favorite')
-  .insert({ user_id: "uuid-utilisateur", product_id: "prod-005" });
+  .insert({ user_id: 'uuid-utilisateur', product_id: 'prod-005' });
 ```
 
 #### États de l'écran
 
-| État                        | Affichage                                                    |
-|-----------------------------|--------------------------------------------------------------|
-| `authLoading`               | `ActivityIndicator`                                          |
-| Non connecté (`!user`)      | Message + bouton "Sign In" → `/login`                        |
-| `favLoading` ou `productsLoading` | `ActivityIndicator`                                  |
-| Aucun favori                | `"No favorites yet"`                                         |
-| Normal                      | `FlatList` de `FavoriteCard` avec bouton "Remove"            |
+| État                              | Affichage                                         |
+| --------------------------------- | ------------------------------------------------- |
+| `authLoading`                     | `ActivityIndicator`                               |
+| Non connecté (`!user`)            | Message + bouton "Sign In" → `/login`             |
+| `favLoading` ou `productsLoading` | `ActivityIndicator`                               |
+| Aucun favori                      | `"No favorites yet"`                              |
+| Normal                            | `FlatList` de `FavoriteCard` avec bouton "Remove" |
 
 #### Erreurs possibles
 
-| Code Supabase | Cause                                    | Comportement                                 |
-|---------------|------------------------------------------|----------------------------------------------|
-| `23505`       | Doublon en base (favori déjà ajouté)     | Ignoré silencieusement (état local correct)  |
-| Autre erreur  | Erreur d'insert/delete réseau            | Rollback de la mise à jour optimiste         |
-| Erreur fetch  | Produits introuvables                    | Log console, `products` reste vide           |
+| Code Supabase | Cause                                | Comportement                                |
+| ------------- | ------------------------------------ | ------------------------------------------- |
+| `23505`       | Doublon en base (favori déjà ajouté) | Ignoré silencieusement (état local correct) |
+| Autre erreur  | Erreur d'insert/delete réseau        | Rollback de la mise à jour optimiste        |
+| Erreur fetch  | Produits introuvables                | Log console, `products` reste vide          |
 
 ---
 
@@ -238,11 +232,11 @@ const { error } = await supabase
 
 #### Comportement selon l'état d'auth
 
-| État               | Affichage                                                    |
-|--------------------|--------------------------------------------------------------|
-| `loading`          | `ActivityIndicator`                                          |
-| Connecté (`user`)  | Email · Date d'inscription · Bouton "Se déconnecter"         |
-| Non connecté       | Texte d'invite · Bouton "Se connecter" · Bouton "Créer un compte" |
+| État              | Affichage                                                         |
+| ----------------- | ----------------------------------------------------------------- |
+| `loading`         | `ActivityIndicator`                                               |
+| Connecté (`user`) | Email · Date d'inscription · Bouton "Se déconnecter"              |
+| Non connecté      | Texte d'invite · Bouton "Se connecter" · Bouton "Créer un compte" |
 
 #### Exemple de données utilisateur affichées
 
@@ -267,17 +261,17 @@ await supabase.auth.signOut();
 
 #### Navigation sortante
 
-| Action                        | Destination |
-|-------------------------------|-------------|
-| Non connecté → "Se connecter" | `/login`    |
-| Non connecté → "Créer un compte" | `/signup` |
+| Action                           | Destination |
+| -------------------------------- | ----------- |
+| Non connecté → "Se connecter"    | `/login`    |
+| Non connecté → "Créer un compte" | `/signup`   |
 
 #### Erreurs possibles
 
-| Cause                  | Comportement                                          |
-|------------------------|-------------------------------------------------------|
-| Erreur signOut réseau  | Silencieuse (non affichée à l'utilisateur)           |
-| Session déjà expirée   | `signOut()` réussit quand même côté client           |
+| Cause                 | Comportement                               |
+| --------------------- | ------------------------------------------ |
+| Erreur signOut réseau | Silencieuse (non affichée à l'utilisateur) |
+| Session déjà expirée  | `signOut()` réussit quand même côté client |
 
 ---
 
@@ -294,87 +288,82 @@ await supabase.auth.signOut();
 
 ```ts
 // 1. Produit
-const { data: product } = await supabase
-  .from('product')
-  .select('*')
-  .eq('id', id)
-  .single();
+const { data: product } = await supabase.from('product').select('*').eq('id', id).single();
 
 // 2. Variantes
-const { data: variants } = await supabase
-  .from('product_variant')
-  .select('*')
-  .eq('product_id', id);
+const { data: variants } = await supabase.from('product_variant').select('*').eq('product_id', id);
 ```
 
 #### Exemple de réponse variantes
 
 ```ts
 [
-  { id: "var-001", product_id: "prod-001", size: "M",  color: "Blanc", stock: 12 },
-  { id: "var-002", product_id: "prod-001", size: "L",  color: "Blanc", stock: 5  },
-  { id: "var-003", product_id: "prod-001", size: "XL", color: "Blanc", stock: 0  },
-]
+  { id: 'var-001', product_id: 'prod-001', size: 'M', color: 'Blanc', stock: 12 },
+  { id: 'var-002', product_id: 'prod-001', size: 'L', color: 'Blanc', stock: 5 },
+  { id: 'var-003', product_id: 'prod-001', size: 'XL', color: 'Blanc', stock: 0 },
+];
 ```
 
 #### Actions utilisateur
 
-| Action               | Auth requise | Comportement si non connecté          |
-|----------------------|--------------|---------------------------------------|
-| Ajouter au panier    | ✅ Oui       | Alert → bouton "Sign In"             |
-| Ajouter aux favoris  | ✅ Oui       | Alert "Please sign in to add favorites" |
-| Voir le produit      | ❌ Non       | Toujours accessible                  |
+| Action              | Auth requise | Comportement si non connecté            |
+| ------------------- | ------------ | --------------------------------------- |
+| Ajouter au panier   | ✅ Oui       | Alert → bouton "Sign In"                |
+| Ajouter aux favoris | ✅ Oui       | Alert "Please sign in to add favorites" |
+| Voir le produit     | ❌ Non       | Toujours accessible                     |
 
 #### États de l'écran
 
-| État          | Affichage                          |
-|---------------|------------------------------------|
-| `loading`     | `ActivityIndicator`                |
-| `notFound`    | "Product not found" + bouton back  |
-| Normal        | Image · Nom · Prix · Variantes · Quantité · Panier · Favori |
+| État       | Affichage                                                   |
+| ---------- | ----------------------------------------------------------- |
+| `loading`  | `ActivityIndicator`                                         |
+| `notFound` | "Product not found" + bouton back                           |
+| Normal     | Image · Nom · Prix · Variantes · Quantité · Panier · Favori |
 
 #### Erreurs possibles
 
-| Cause                         | Comportement                              |
-|-------------------------------|-------------------------------------------|
-| ID invalide / produit absent  | `notFound = true` → écran "not found"    |
-| Erreur fetch variantes         | Log console, `variants` reste vide       |
+| Cause                        | Comportement                          |
+| ---------------------------- | ------------------------------------- |
+| ID invalide / produit absent | `notFound = true` → écran "not found" |
+| Erreur fetch variantes       | Log console, `variants` reste vide    |
 
 ---
 
 ## Contextes & Hooks utilisés
 
-| Hook / Contexte    | Fichier                   | Route(s) concernée(s)               |
-|--------------------|---------------------------|--------------------------------------|
-| `useAuth()`        | `hooks/useAuth.ts`        | favorites, compte, product/[id]      |
-| `useFavorites()`   | `hooks/useFavorites.ts`   | favorites, product/[id]              |
-| `useCart()`        | `hooks/useCart.ts`        | product/[id], CartModal (FAB)        |
-| `useProductsByCategory()` | `hooks/useProductsByCategory.ts` | index (Products)          |
-| `useProducts()`    | `hooks/useProducts.ts`    | category/[id]                        |
-| `CartContext`      | `context/CartContext.tsx`  | Panier global (persisté AsyncStorage)|
-| `AuthContext`      | `context/AuthContext.tsx`  | Session globale (persistée AsyncStorage)|
+| Hook / Contexte           | Fichier                          | Route(s) concernée(s)                    |
+| ------------------------- | -------------------------------- | ---------------------------------------- |
+| `useAuth()`               | `hooks/useAuth.ts`               | favorites, compte, product/[id]          |
+| `useFavorites()`          | `hooks/useFavorites.ts`          | favorites, product/[id]                  |
+| `useCart()`               | `hooks/useCart.ts`               | product/[id], CartModal (FAB)            |
+| `useProductsByCategory()` | `hooks/useProductsByCategory.ts` | index (Products)                         |
+| `useProducts()`           | `hooks/useProducts.ts`           | category/[id]                            |
+| `CartContext`             | `context/CartContext.tsx`        | Panier global (persisté AsyncStorage)    |
+| `AuthContext`             | `context/AuthContext.tsx`        | Session globale (persistée AsyncStorage) |
 
 ---
 
 ## Schéma Supabase (tables utilisées)
 
-| Table             | Colonnes clés                                              |
-|-------------------|------------------------------------------------------------|
+| Table             | Colonnes clés                                                                 |
+| ----------------- | ----------------------------------------------------------------------------- |
 | `product`         | `id`, `name`, `price`, `description`, `image_url`, `category_id`, `is_active` |
-| `product_variant` | `id`, `product_id`, `size`, `color`, `stock`               |
-| `category`        | `id`, `name`                                               |
-| `favorite`        | `user_id`, `product_id` *(clé composite unique)*           |
+| `product_variant` | `id`, `product_id`, `size`, `color`, `stock`                                  |
+| `category`        | `id`, `name`                                                                  |
+| `favorite`        | `user_id`, `product_id` _(clé composite unique)_                              |
 
 ---
 
 ## 💳 PAYMENT (LOCAL MOCK)
 
 ### Checkout Flow (Mock)
+
 Utilisé par: `checkout.tsx`
 
 **Description:** Simule un paiement (local dev only)
 
 **Flow:**
+
 1. User remplit formulaire (fullName, email, address)
 2. User clique "Pay €XX"
 3. App crée une ordre en BDD directement
