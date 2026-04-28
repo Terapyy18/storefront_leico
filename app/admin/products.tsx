@@ -4,6 +4,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -15,6 +16,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { supabase } from '../../services/supabaseClient';
@@ -54,10 +56,45 @@ const EMPTY_FORM = {
   variants: [{ ...EMPTY_VARIANT }] as Variant[],
 };
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+
+const T = {
+  bg: '#F7F8FA',
+  surface: '#FFFFFF',
+  border: '#E8EAF0',
+  borderStrong: '#D0D3DE',
+  text: '#111827',
+  muted: '#6B7280',
+  subtle: '#9CA3AF',
+  accent: '#4F46E5',        // indigo vif
+  accentLight: '#EEF2FF',
+  accentMid: '#C7D2FE',
+  success: '#10B981',
+  successLight: '#ECFDF5',
+  danger: '#EF4444',
+  dangerLight: '#FEF2F2',
+  warning: '#F59E0B',
+  warningLight: '#FFFBEB',
+};
+
+// ─── Breakpoint ──────────────────────────────────────────────────────────────
+
+const WEB_BREAKPOINT = 768;
+
+function useIsWeb() {
+  const { width } = useWindowDimensions();
+  return Platform.OS === 'web' && width >= WEB_BREAKPOINT;
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function totalStock(variants: Variant[]) {
   return variants.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+}
+
+function getCategoryName(categories: Category[], id: string | null) {
+  if (!id) return null;
+  return categories.find((c) => c.id === id)?.name ?? null;
 }
 
 // ─── Composant principal ──────────────────────────────────────────────────────
@@ -70,10 +107,11 @@ export default function Products() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
 
-  // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  const isWeb = useIsWeb();
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -91,9 +129,8 @@ export default function Products() {
     setRefreshing(false);
   }
 
-  useEffect(() => {
-    fetchAll();
-  }, []);
+  useEffect(() => { fetchAll(); }, []);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchAll();
@@ -142,9 +179,7 @@ export default function Products() {
         name: form.name.trim(),
         description: form.description.trim(),
         price: parseFloat(form.price.replace(',', '.')),
-        image_url:
-          form.image_url.trim() ||
-          'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
+        image_url: form.image_url.trim() || 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80',
         is_active: form.is_active,
         category_id: form.category_id,
       };
@@ -161,20 +196,16 @@ export default function Products() {
       }
 
       const validVariants = form.variants.filter((v) => v.size.trim() || v.color.trim());
-
       if (editingId) {
         await supabase.from('product_variant').delete().eq('product_id', productId!);
       }
-
       if (validVariants.length > 0) {
         const variantPayload = validVariants.map((v) => ({
           product_id: productId!,
           size: v.size.trim(),
           color: v.color.trim(),
           stock: Number(v.stock) || 0,
-          sku:
-            v.sku.trim() ||
-            `${form.name.slice(0, 3).toUpperCase()}-${v.size}-${v.color}`.toUpperCase(),
+          sku: v.sku.trim() || `${form.name.slice(0, 3).toUpperCase()}-${v.size}-${v.color}`.toUpperCase(),
         }));
         const { error } = await supabase.from('product_variant').insert(variantPayload);
         if (error) throw error;
@@ -189,10 +220,9 @@ export default function Products() {
     }
   }
 
-  // ── Supprimer avec LOGS ───────────────────────────────────────────────────
+  // ── Supprimer ─────────────────────────────────────────────────────────────
 
   async function handleDelete(id: string, name: string) {
-    // Sur web, Alert.alert ne fonctionne pas — on utilise window.confirm
     const confirmed =
       Platform.OS === 'web'
         ? window.confirm(`Supprimer "${name}" ?`)
@@ -215,7 +245,6 @@ export default function Products() {
         .eq('product_id', id);
 
       const variantIds = variants?.map((v) => v.id) ?? [];
-
       if (variantIds.length > 0) {
         await supabase.from('order_item').delete().in('variant_id', variantIds);
       }
@@ -226,9 +255,10 @@ export default function Products() {
       if (error) throw error;
     } catch (e: any) {
       setProducts(previous);
-      alert('Erreur : ' + e.message); // alert() natif fonctionne sur web
+      alert('Erreur : ' + e.message);
     }
   }
+
   // ── Variants helpers ───────────────────────────────────────────────────────
 
   function updateVariant(index: number, field: keyof Variant, value: string) {
@@ -244,36 +274,338 @@ export default function Products() {
   }
 
   function removeVariant(index: number) {
-    setForm((f) => ({
-      ...f,
-      variants: f.variants.filter((_, i) => i !== index),
-    }));
+    setForm((f) => ({ ...f, variants: f.variants.filter((_, i) => i !== index) }));
   }
 
   // ── Filtre ─────────────────────────────────────────────────────────────────
 
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = products.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
-  // ── Rendu ──────────────────────────────────────────────────────────────────
+  // ── Loading ────────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#ff4757" />
+        <ActivityIndicator size="large" color={T.accent} />
+        <Text style={styles.loadingText}>Chargement...</Text>
       </View>
     );
   }
+
+  // ── Rendu formulaire partagé ───────────────────────────────────────────────
+
+  const FormContent = (
+    <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+      {/* Section : Informations */}
+      <SectionLabel text="Informations générales" />
+
+      <FieldLabel text="Nom du produit *" />
+      <TextInput
+        style={styles.input}
+        placeholder="Ex : T-shirt oversize blanc"
+        placeholderTextColor={T.subtle}
+        value={form.name}
+        onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
+      />
+
+      <FieldLabel text="Description" />
+      <TextInput
+        style={[styles.input, styles.textarea]}
+        placeholder="Décrivez votre produit..."
+        placeholderTextColor={T.subtle}
+        multiline
+        value={form.description}
+        onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
+      />
+
+      <FieldLabel text="URL de l'image" />
+      <TextInput
+        style={styles.input}
+        placeholder="https://exemple.com/image.jpg"
+        placeholderTextColor={T.subtle}
+        autoCapitalize="none"
+        keyboardType="url"
+        value={form.image_url}
+        onChangeText={(v) => setForm((f) => ({ ...f, image_url: v }))}
+      />
+      {/* Aperçu image */}
+      {form.image_url.trim().length > 0 && (
+        <View style={styles.imagePreviewWrap}>
+          <Image
+            source={{ uri: form.image_url.trim() }}
+            style={styles.imagePreview}
+            resizeMode="cover"
+          />
+        </View>
+      )}
+
+      <View style={styles.row2}>
+        <View style={{ flex: 1 }}>
+          <FieldLabel text="Prix (€) *" />
+          <TextInput
+            style={styles.input}
+            keyboardType="decimal-pad"
+            placeholder="0.00"
+            placeholderTextColor={T.subtle}
+            value={form.price}
+            onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
+          />
+        </View>
+        <View style={{ width: 14 }} />
+        <View style={{ flex: 1 }}>
+          <FieldLabel text="Statut" />
+          <View style={styles.switchBox}>
+            <Switch
+              value={form.is_active}
+              onValueChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
+              trackColor={{ false: T.border, true: T.accentMid }}
+              thumbColor={form.is_active ? T.accent : T.subtle}
+            />
+            <Text style={[styles.switchLabel, { color: form.is_active ? T.accent : T.muted }]}>
+              {form.is_active ? 'Visible' : 'Masqué'}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Section : Catégorie */}
+      <SectionLabel text="Catégorie" />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+        {categories.map((c) => (
+          <TouchableOpacity
+            key={c.id}
+            style={[styles.chip, form.category_id === c.id && styles.chipActive]}
+            onPress={() => setForm((f) => ({ ...f, category_id: c.id }))}
+          >
+            <Text style={[styles.chipText, form.category_id === c.id && styles.chipTextActive]}>
+              {c.name}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Section : Variants */}
+      <View style={styles.variantsHeader}>
+        <SectionLabel text={`Variants (${form.variants.length})`} />
+        <TouchableOpacity style={styles.btnAddVariant} onPress={addVariant}>
+          <Ionicons name="add-circle-outline" size={16} color={T.accent} />
+          <Text style={styles.btnAddVariantText}>Ajouter</Text>
+        </TouchableOpacity>
+      </View>
+
+      {form.variants.map((v, i) => (
+        <View key={i} style={styles.variantCard}>
+          <View style={styles.variantCardHeader}>
+            <Text style={styles.variantCardTitle}>Variant {i + 1}</Text>
+            {form.variants.length > 1 && (
+              <TouchableOpacity onPress={() => removeVariant(i)} style={styles.removeVariantBtn}>
+                <Ionicons name="close" size={14} color={T.danger} />
+              </TouchableOpacity>
+            )}
+          </View>
+          <View style={styles.row2}>
+            <View style={{ flex: 1 }}>
+              <FieldLabel text="Taille" />
+              <TextInput
+                style={styles.input}
+                placeholder="S, M, L..."
+                placeholderTextColor={T.subtle}
+                value={v.size}
+                onChangeText={(val) => updateVariant(i, 'size', val)}
+              />
+            </View>
+            <View style={{ width: 10 }} />
+            <View style={{ flex: 1 }}>
+              <FieldLabel text="Couleur" />
+              <TextInput
+                style={styles.input}
+                placeholder="Blanc, Noir..."
+                placeholderTextColor={T.subtle}
+                value={v.color}
+                onChangeText={(val) => updateVariant(i, 'color', val)}
+              />
+            </View>
+          </View>
+          <View style={styles.row2}>
+            <View style={{ flex: 1 }}>
+              <FieldLabel text="Stock" />
+              <TextInput
+                style={styles.input}
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor={T.subtle}
+                value={String(v.stock || '')}
+                onChangeText={(val) => updateVariant(i, 'stock', val)}
+              />
+            </View>
+            <View style={{ width: 10 }} />
+            <View style={{ flex: 1 }}>
+              <FieldLabel text="SKU" />
+              <TextInput
+                style={styles.input}
+                placeholder="AUTO"
+                placeholderTextColor={T.subtle}
+                value={v.sku}
+                autoCapitalize="characters"
+                onChangeText={(val) => updateVariant(i, 'sku', val)}
+              />
+            </View>
+          </View>
+        </View>
+      ))}
+
+      {/* Actions */}
+      <TouchableOpacity
+        style={[styles.btnSave, saving && { opacity: 0.6 }]}
+        onPress={handleSave}
+        disabled={saving}
+      >
+        {saving ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.btnSaveText}>
+            {editingId ? '✓  Enregistrer les modifications' : '✓  Créer le produit'}
+          </Text>
+        )}
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.btnCancel} onPress={() => setModalVisible(false)}>
+        <Text style={styles.btnCancelText}>Annuler</Text>
+      </TouchableOpacity>
+      <View style={{ height: 48 }} />
+    </ScrollView>
+  );
+
+  // ── Vue WEB ────────────────────────────────────────────────────────────────
+
+  if (isWeb) {
+    return (
+      <View style={webStyles.container}>
+        {/* Sidebar */}
+        <View style={webStyles.sidebar}>
+          <View style={webStyles.sidebarHeader}>
+            <Text style={webStyles.sidebarTitle}>Produits</Text>
+            <Text style={webStyles.sidebarCount}>
+              {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+            </Text>
+          </View>
+
+          {/* Search */}
+          <View style={webStyles.searchWrap}>
+            <Ionicons name="search-outline" size={15} color={T.muted} style={{ marginRight: 8 }} />
+            <TextInput
+              style={webStyles.searchInput}
+              placeholder="Rechercher un produit..."
+              placeholderTextColor={T.subtle}
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
+          {/* Liste */}
+          <FlatList
+            data={filtered}
+            keyExtractor={(p) => p.id}
+            contentContainerStyle={{ gap: 6, paddingBottom: 80 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.accent} />
+            }
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons name="cube-outline" size={36} color={T.border} />
+                <Text style={styles.emptyText}>Aucun produit trouvé</Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={webStyles.sidebarItem}>
+                {item.image_url ? (
+                  <Image
+                    source={{ uri: item.image_url }}
+                    style={webStyles.sidebarItemThumb}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={[webStyles.sidebarItemThumb, webStyles.sidebarItemThumbEmpty]}>
+                    <Ionicons name="image-outline" size={18} color={T.subtle} />
+                  </View>
+                )}
+                <View style={webStyles.sidebarItemBody}>
+                  <View style={webStyles.sidebarItemTop}>
+                    <Text style={webStyles.sidebarItemName} numberOfLines={1}>{item.name}</Text>
+                    <View style={[webStyles.dot, { backgroundColor: item.is_active ? T.success : T.border }]} />
+                  </View>
+                  <Text style={webStyles.sidebarItemMeta}>
+                    {Number(item.price).toFixed(2)} €
+                    {getCategoryName(categories, item.category_id)
+                      ? '  ·  ' + getCategoryName(categories, item.category_id)
+                      : ''}
+                  </Text>
+                </View>
+                <View style={webStyles.sidebarItemActions}>
+                  <TouchableOpacity style={webStyles.iconBtnSm} onPress={() => openEdit(item)}>
+                    <Ionicons name="pencil-outline" size={14} color={T.muted} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[webStyles.iconBtnSm, webStyles.iconBtnDanger]}
+                    onPress={() => handleDelete(item.id, item.name)}
+                  >
+                    <Ionicons name="trash-outline" size={14} color={T.danger} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          />
+
+          
+        </View>
+
+        {/* Main panel : formulaire ou état vide */}
+        <View style={webStyles.main}>
+          {modalVisible ? (
+            <View style={webStyles.mainPanel}>
+              <View style={webStyles.mainPanelHeader}>
+                <Text style={webStyles.mainPanelTitle}>
+                  {editingId ? 'Modifier le produit' : 'Nouveau produit'}
+                </Text>
+                <TouchableOpacity style={webStyles.closeBtn} onPress={() => setModalVisible(false)}>
+                  <Ionicons name="close" size={18} color={T.muted} />
+                </TouchableOpacity>
+              </View>
+              {FormContent}
+            </View>
+          ) : (
+            <View style={webStyles.mainEmpty}>
+              <View style={webStyles.mainEmptyIcon}>
+                <Ionicons name="cube-outline" size={40} color={T.accent} />
+              </View>
+              <Text style={webStyles.mainEmptyTitle}>Sélectionnez ou créez un produit</Text>
+              <Text style={webStyles.mainEmptySubtitle}>
+                Cliquez sur un produit dans la liste ou créez-en un nouveau pour commencer.
+              </Text>
+              <TouchableOpacity style={webStyles.mainEmptyBtn} onPress={openNew}>
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={webStyles.mainEmptyBtnText}>Créer un produit</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  // ── Vue MOBILE ─────────────────────────────────────────────────────────────
 
   return (
     <View style={styles.container}>
       {/* Top bar */}
       <View style={styles.topBar}>
         <View style={styles.searchWrap}>
-          <Ionicons name="search-outline" size={16} color="#444" style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={16} color={T.muted} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
             placeholder="Rechercher..."
-            placeholderTextColor="#444"
+            placeholderTextColor={T.subtle}
             value={search}
             onChangeText={setSearch}
           />
@@ -288,45 +620,63 @@ export default function Products() {
         {filtered.length} produit{filtered.length > 1 ? 's' : ''}
       </Text>
 
-      {/* Liste */}
+      {/* Liste mobile */}
       <FlatList
         data={filtered}
         keyExtractor={(p) => p.id}
         contentContainerStyle={styles.list}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#ff4757" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={T.accent} />
         }
         ListEmptyComponent={
           <View style={styles.empty}>
+            <Ionicons name="cube-outline" size={40} color={T.border} />
             <Text style={styles.emptyText}>Aucun produit</Text>
           </View>
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <View
-              style={[styles.activeDot, { backgroundColor: item.is_active ? '#10b981' : '#333' }]}
-            />
-
+            {item.image_url ? (
+              <Image source={{ uri: item.image_url }} style={styles.cardThumb} resizeMode="cover" />
+            ) : (
+              <View style={[styles.cardThumb, styles.cardThumbEmpty]}>
+                <Ionicons name="image-outline" size={20} color={T.subtle} />
+              </View>
+            )}
             <View style={styles.cardBody}>
-              <Text style={styles.cardName}>{item.name}</Text>
+              <View style={styles.cardTopRow}>
+                <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: item.is_active ? T.successLight : T.bg },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      { color: item.is_active ? T.success : T.muted },
+                    ]}
+                  >
+                    {item.is_active ? 'Actif' : 'Masqué'}
+                  </Text>
+                </View>
+              </View>
               <Text style={styles.cardMeta}>
                 {Number(item.price).toFixed(2)} €
-                {categories.find((c) => c.id === item.category_id)
-                  ? '  ·  ' + categories.find((c) => c.id === item.category_id)!.name
+                {getCategoryName(categories, item.category_id)
+                  ? '  ·  ' + getCategoryName(categories, item.category_id)
                   : ''}
               </Text>
             </View>
-
             <TouchableOpacity style={styles.iconBtn} onPress={() => openEdit(item)}>
-              <Ionicons name="pencil-outline" size={17} color="#888" />
+              <Ionicons name="pencil-outline" size={16} color={T.muted} />
             </TouchableOpacity>
-
-            {/* BOUTON SUPPRIMER CORRIGÉ */}
             <TouchableOpacity
               style={[styles.iconBtn, styles.iconBtnDanger]}
               onPress={() => handleDelete(item.id, item.name)}
             >
-              <Ionicons name="trash-outline" size={17} color="#ff4757" />
+              <Ionicons name="trash-outline" size={16} color={T.danger} />
             </TouchableOpacity>
           </View>
         )}
@@ -334,10 +684,10 @@ export default function Products() {
 
       {/* FAB */}
       <TouchableOpacity style={styles.fab} onPress={openNew}>
-        <Ionicons name="add" size={30} color="#fff" />
+        <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
-      {/* Modal */}
+      {/* Modal mobile */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -345,152 +695,16 @@ export default function Products() {
         >
           <Pressable style={styles.overlay} onPress={() => setModalVisible(false)} />
           <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>
                 {editingId ? 'Modifier le produit' : 'Nouveau produit'}
               </Text>
               <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
-                <Ionicons name="close" size={20} color="#888" />
+                <Ionicons name="close" size={18} color={T.muted} />
               </TouchableOpacity>
             </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <SectionLabel text="Informations" />
-              <FieldLabel text="Nom *" />
-              <TextInput
-                style={styles.input}
-                placeholder="Ex : T-shirt oversize"
-                value={form.name}
-                onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
-              />
-
-              <FieldLabel text="Description" />
-              <TextInput
-                style={[styles.input, styles.textarea]}
-                placeholder="Description..."
-                multiline
-                value={form.description}
-                onChangeText={(v) => setForm((f) => ({ ...f, description: v }))}
-              />
-
-              <View style={styles.row2}>
-                <View style={{ flex: 1 }}>
-                  <FieldLabel text="Prix (€) *" />
-                  <TextInput
-                    style={styles.input}
-                    keyboardType="decimal-pad"
-                    value={form.price}
-                    onChangeText={(v) => setForm((f) => ({ ...f, price: v }))}
-                  />
-                </View>
-                <View style={{ width: 12 }} />
-                <View style={{ flex: 1 }}>
-                  <FieldLabel text="Actif" />
-                  <View style={styles.switchBox}>
-                    <Switch
-                      value={form.is_active}
-                      onValueChange={(v) => setForm((f) => ({ ...f, is_active: v }))}
-                      trackColor={{ false: '#1f1f1f', true: '#ff4757' }}
-                    />
-                    <Text style={styles.switchLabel}>{form.is_active ? 'Visible' : 'Masqué'}</Text>
-                  </View>
-                </View>
-              </View>
-
-              <SectionLabel text="Catégorie" />
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-                {categories.map((c) => (
-                  <TouchableOpacity
-                    key={c.id}
-                    style={[styles.chip, form.category_id === c.id && styles.chipActive]}
-                    onPress={() => setForm((f) => ({ ...f, category_id: c.id }))}
-                  >
-                    <Text
-                      style={[styles.chipText, form.category_id === c.id && styles.chipTextActive]}
-                    >
-                      {c.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-
-              <View style={styles.variantsHeader}>
-                <SectionLabel text={`Variants (${form.variants.length})`} />
-                <TouchableOpacity style={styles.btnAddVariant} onPress={addVariant}>
-                  <Ionicons name="add-circle-outline" size={16} color="#ff4757" />
-                  <Text style={styles.btnAddVariantText}>Ajouter</Text>
-                </TouchableOpacity>
-              </View>
-
-              {form.variants.map((v, i) => (
-                <View key={i} style={styles.variantCard}>
-                  <View style={styles.variantCardHeader}>
-                    <Text style={styles.variantCardTitle}>Variant {i + 1}</Text>
-                    {form.variants.length > 1 && (
-                      <TouchableOpacity onPress={() => removeVariant(i)}>
-                        <Ionicons name="close-circle-outline" size={18} color="#555" />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <View style={styles.row2}>
-                    <View style={{ flex: 1 }}>
-                      <FieldLabel text="Taille" />
-                      <TextInput
-                        style={styles.input}
-                        value={v.size}
-                        onChangeText={(val) => updateVariant(i, 'size', val)}
-                      />
-                    </View>
-                    <View style={{ width: 10 }} />
-                    <View style={{ flex: 1 }}>
-                      <FieldLabel text="Couleur" />
-                      <TextInput
-                        style={styles.input}
-                        value={v.color}
-                        onChangeText={(val) => updateVariant(i, 'color', val)}
-                      />
-                    </View>
-                  </View>
-                  <View style={styles.row2}>
-                    <View style={{ flex: 1 }}>
-                      <FieldLabel text="Stock" />
-                      <TextInput
-                        style={styles.input}
-                        keyboardType="number-pad"
-                        value={String(v.stock || '')}
-                        onChangeText={(val) => updateVariant(i, 'stock', val)}
-                      />
-                    </View>
-                    <View style={{ width: 10 }} />
-                    <View style={{ flex: 1 }}>
-                      <FieldLabel text="SKU" />
-                      <TextInput
-                        style={styles.input}
-                        value={v.sku}
-                        autoCapitalize="characters"
-                        onChangeText={(val) => updateVariant(i, 'sku', val)}
-                      />
-                    </View>
-                  </View>
-                </View>
-              ))}
-
-              <TouchableOpacity
-                style={[styles.btnSave, saving && { opacity: 0.6 }]}
-                onPress={handleSave}
-                disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.btnSaveText}>{editingId ? 'Enregistrer' : 'Créer'}</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btnCancel} onPress={() => setModalVisible(false)}>
-                <Text style={styles.btnCancelText}>Annuler</Text>
-              </TouchableOpacity>
-              <View style={{ height: 40 }} />
-            </ScrollView>
+            {FormContent}
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -502,17 +716,15 @@ export default function Products() {
 
 function SectionLabel({ text }: { text: string }) {
   return (
-    <Text
-      style={{
-        fontSize: 11,
-        color: '#555',
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-        marginTop: 24,
-        marginBottom: 12,
-      }}
-    >
+    <Text style={{
+      fontSize: 10,
+      color: T.muted,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 1.2,
+      marginTop: 28,
+      marginBottom: 10,
+    }}>
       {text}
     </Text>
   );
@@ -520,116 +732,162 @@ function SectionLabel({ text }: { text: string }) {
 
 function FieldLabel({ text }: { text: string }) {
   return (
-    <Text
-      style={{
-        fontSize: 12,
-        color: '#555',
-        fontWeight: '600',
-        marginBottom: 6,
-        letterSpacing: 0.3,
-      }}
-    >
+    <Text style={{
+      fontSize: 12,
+      color: T.muted,
+      fontWeight: '600',
+      marginBottom: 6,
+      letterSpacing: 0.2,
+    }}>
       {text}
     </Text>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles communs ───────────────────────────────────────────────────────────
 
-const S = {
-  bg: '#FBFCFD',
-  surface: '#FFFFFF',
-  border: '#F2F2F7',
-  text: '#1C1C1E',
-  muted: '#8E8E93',
-  accent: '#007AFF',
-  success: '#10b981',
-};
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: S.bg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: S.bg },
+  container: { flex: 1, backgroundColor: T.bg },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: T.bg, gap: 12 },
+  loadingText: { fontSize: 14, color: T.muted },
+
+  // Top bar
   topBar: {
     flexDirection: 'row',
     padding: 12,
     gap: 10,
+    backgroundColor: T.surface,
     borderBottomWidth: 1,
-    borderColor: S.border,
+    borderColor: T.border,
   },
   searchWrap: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: S.surface,
+    backgroundColor: T.bg,
     borderRadius: 10,
     paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: S.border,
+    borderColor: T.border,
   },
-  searchInput: { flex: 1, height: 42, color: S.text, fontSize: 14 },
+  searchInput: { flex: 1, height: 40, color: T.text, fontSize: 14 },
   btnAdd: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: S.accent,
+    backgroundColor: T.accent,
     borderRadius: 10,
     paddingHorizontal: 14,
-    height: 42,
+    height: 40,
   },
   btnAddText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+
+  // Count
   count: {
     fontSize: 11,
-    color: '#444',
+    color: T.muted,
     paddingHorizontal: 16,
     paddingVertical: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
-  list: { padding: 12, paddingTop: 0, gap: 8, paddingBottom: 100 },
+
+  // List
+  list: { padding: 12, paddingTop: 4, gap: 8, paddingBottom: 100 },
+
+  // Card
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: S.surface,
+    backgroundColor: T.surface,
     borderRadius: 14,
-    padding: 14,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: S.border,
-    gap: 10,
+    borderColor: T.border,
+    gap: 12,
+    paddingRight: 10,
   },
-  activeDot: { width: 8, height: 8, borderRadius: 4 },
-  cardBody: { flex: 1, gap: 4 },
-  cardName: { fontSize: 15, fontWeight: '700', color: S.text },
-  cardMeta: { fontSize: 12, color: S.muted },
-  iconBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#1a1a1a',
+  cardThumb: {
+    width: 60,
+    height: 60,
+  },
+  cardThumbEmpty: {
+    backgroundColor: T.bg,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  iconBtnDanger: { backgroundColor: '#ff47571a' },
-  empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyText: { color: '#333', fontSize: 14 },
+  cardBody: { flex: 1, gap: 4, paddingVertical: 12 },
+  cardTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardName: { flex: 1, fontSize: 15, fontWeight: '700', color: T.text },
+  cardMeta: { fontSize: 12, color: T.muted },
+
+  // Status badge
+  statusBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  statusBadgeText: { fontSize: 11, fontWeight: '700' },
+
+  // Icon buttons
+  iconBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    backgroundColor: T.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  iconBtnDanger: { backgroundColor: T.dangerLight, borderColor: '#FECACA' },
+
+  // Empty
+  empty: { alignItems: 'center', paddingVertical: 60, gap: 10 },
+  emptyText: { color: T.muted, fontSize: 14, fontWeight: '500' },
+
+  // FAB
   fab: {
     position: 'absolute',
     bottom: 28,
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: S.accent,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: T.accent,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: T.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
     elevation: 8,
   },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
+
+  // Modal
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.35)' },
   sheet: {
-    backgroundColor: '#111',
+    backgroundColor: T.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
+    paddingTop: 12,
     maxHeight: '93%',
     marginTop: 'auto',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: T.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -637,78 +895,267 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 4,
   },
-  sheetTitle: { fontSize: 20, fontWeight: '800', color: S.text },
+  sheetTitle: { fontSize: 20, fontWeight: '800', color: T.text },
   closeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: T.bg,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
   },
+
+  // Form
   input: {
-    backgroundColor: S.surface,
+    backgroundColor: T.surface,
     borderRadius: 10,
-    padding: 13,
-    color: S.text,
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    color: T.text,
     fontSize: 14,
     borderWidth: 1,
-    borderColor: S.border,
-    marginBottom: 4,
+    borderColor: T.border,
+    marginBottom: 10,
   },
   textarea: { height: 80, textAlignVertical: 'top' },
   row2: { flexDirection: 'row', marginBottom: 4 },
+
+  // Image preview
+  imagePreviewWrap: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: T.border,
+    height: 140,
+  },
+  imagePreview: { width: '100%', height: '100%' },
+
   switchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: S.surface,
+    backgroundColor: T.surface,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: S.border,
-    padding: 10,
-    height: 46,
+    borderColor: T.border,
+    paddingHorizontal: 12,
+    height: 44,
   },
-  switchLabel: { color: S.muted, fontSize: 13, fontWeight: '600' },
+  switchLabel: { fontSize: 13, fontWeight: '600' },
+
   chips: { marginBottom: 4 },
   chip: {
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    backgroundColor: S.surface,
+    backgroundColor: T.surface,
     borderWidth: 1,
-    borderColor: S.border,
+    borderColor: T.border,
     marginRight: 8,
   },
-  chipActive: { backgroundColor: S.accent, borderColor: S.accent },
-  chipText: { color: S.muted, fontSize: 13, fontWeight: '600' },
-  chipTextActive: { color: '#fff' },
+  chipActive: { backgroundColor: T.accentLight, borderColor: T.accentMid },
+  chipText: { color: T.muted, fontSize: 13, fontWeight: '600' },
+  chipTextActive: { color: T.accent },
+
   variantsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   btnAddVariant: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  btnAddVariantText: { color: S.accent, fontSize: 13, fontWeight: '700' },
+  btnAddVariantText: { color: T.accent, fontSize: 13, fontWeight: '700' },
+
   variantCard: {
-    backgroundColor: '#0a0a0a',
+    backgroundColor: T.bg,
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: '#252525',
+    borderColor: T.border,
   },
   variantCardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  variantCardTitle: { fontSize: 12, color: S.muted, fontWeight: '700', textTransform: 'uppercase' },
+  variantCardTitle: { fontSize: 11, color: T.muted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  removeVariantBtn: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: T.dangerLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   btnSave: {
-    backgroundColor: S.accent,
+    backgroundColor: T.accent,
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
-    marginTop: 28,
+    marginTop: 24,
+    shadowColor: T.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  btnSaveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  btnCancel: { borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 8 },
-  btnCancelText: { color: '#444', fontSize: 15 },
+  btnSaveText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  btnCancel: { borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 6 },
+  btnCancelText: { color: T.muted, fontSize: 14, fontWeight: '600' },
+});
+
+// ─── Styles WEB uniquement ────────────────────────────────────────────────────
+
+const webStyles = StyleSheet.create({
+  container: { flex: 1, flexDirection: 'row', backgroundColor: T.bg },
+
+  // Sidebar
+  sidebar: {
+    width: 340,
+    backgroundColor: T.surface,
+    borderRightWidth: 1,
+    borderColor: T.border,
+    padding: 16,
+    paddingTop: 24,
+  },
+  sidebarHeader: { marginBottom: 16 },
+  sidebarTitle: { fontSize: 22, fontWeight: '800', color: T.text, marginBottom: 4 },
+  sidebarCount: { fontSize: 12, color: T.muted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8 },
+
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.bg,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: T.border,
+    marginBottom: 14,
+  },
+  searchInput: { flex: 1, height: 38, color: T.text, fontSize: 14 },
+
+  // Sidebar items
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.bg,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: T.border,
+    gap: 10,
+    paddingRight: 8,
+  },
+  sidebarItemThumb: { width: 50, height: 50 },
+  sidebarItemThumbEmpty: {
+    backgroundColor: T.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sidebarItemBody: { flex: 1, paddingVertical: 10, gap: 4 },
+  sidebarItemTop: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  sidebarItemName: { flex: 1, fontSize: 13, fontWeight: '700', color: T.text },
+  sidebarItemMeta: { fontSize: 11, color: T.muted },
+  dot: { width: 7, height: 7, borderRadius: 4 },
+  sidebarItemActions: { flexDirection: 'row', gap: 6 },
+  iconBtnSm: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    backgroundColor: T.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+  iconBtnDanger: { backgroundColor: T.dangerLight, borderColor: '#FECACA' },
+
+  // Sidebar new button
+  sidebarNewBtn: {
+    position: 'absolute',
+    bottom: 20,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: T.accent,
+    borderRadius: 12,
+    padding: 14,
+    shadowColor: T.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  sidebarNewBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+
+  // Main panel
+  main: { flex: 1, justifyContent: 'center', alignItems: 'stretch' },
+  mainPanel: {
+    flex: 1,
+    backgroundColor: T.surface,
+    margin: 24,
+    borderRadius: 20,
+    padding: 28,
+    borderWidth: 1,
+    borderColor: T.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+  },
+  mainPanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderColor: T.border,
+  },
+  mainPanelTitle: { fontSize: 20, fontWeight: '800', color: T.text },
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: T.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+  },
+
+  // Main empty state
+  mainEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+    padding: 40,
+    gap: 12,
+  },
+  mainEmptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    backgroundColor: T.accentLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  mainEmptyTitle: { fontSize: 20, fontWeight: '800', color: T.text, textAlign: 'center' },
+  mainEmptySubtitle: { fontSize: 14, color: T.muted, textAlign: 'center', maxWidth: 300, lineHeight: 22 },
+  mainEmptyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: T.accent,
+    borderRadius: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    marginTop: 8,
+  },
+  mainEmptyBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });
