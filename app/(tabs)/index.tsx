@@ -4,10 +4,12 @@ import ProductCard from '@/components/ProductCard';
 import { useProductsByCategory } from '@/hooks/useProductsByCategory';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -18,7 +20,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useAuth } from '../../context/AuthContext'; // ← ajuste le chemin si nécessaire
+import { useAuth } from '../../context/AuthContext';
 
 // ─── Palette ────────────────────────────────────────────────────────────────
 const C = {
@@ -42,7 +44,7 @@ function useBreakpoint() {
   };
 }
 
-// ─── Vérifie si l'user est admin (app_metadata OU user_metadata) ─────────────
+// ─── Vérifie si l'user est admin ─────────────────────────────────────────────
 function useIsAdmin() {
   const { user } = useAuth();
   return (
@@ -51,6 +53,247 @@ function useIsAdmin() {
     false
   );
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// CAROUSEL
+// Prend un lot d'images aléatoires extraites des produits de la BDD
+// ════════════════════════════════════════════════════════════════════════════
+const CAROUSEL_HEIGHT = 480;
+const CAROUSEL_INTERVAL = 4000;
+const CAROUSEL_SAMPLE = 8; // nb d'images max dans le carousel
+
+/** Extrait et mélange aléatoirement des images depuis toutes les sections */
+function pickRandomImages(sections: any[], count: number): { url: string; name: string; id: string }[] {
+  const all: { url: string; name: string; id: string }[] = [];
+
+  for (const section of sections) {
+    for (const product of section.data) {
+      // Supporte image_url, images (tableau), ou image (string)
+      const url =
+        product.image_url ||
+        (Array.isArray(product.images) && product.images[0]) ||
+        product.image ||
+        null;
+      if (url) {
+        all.push({ url, name: product.name, id: product.id });
+      }
+    }
+  }
+
+  // Fisher-Yates shuffle
+  for (let i = all.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [all[i], all[j]] = [all[j], all[i]];
+  }
+
+  return all.slice(0, count);
+}
+
+function ProductCarousel({ sections }: { sections: any[] }) {
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+
+  const slides = useMemo(() => pickRandomImages(sections, CAROUSEL_SAMPLE), [sections]);
+
+  const [current, setCurrent] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const goTo = useCallback(
+    (index: number) => {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start(() => {
+        setCurrent(index);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }).start();
+      });
+    },
+    [fadeAnim],
+  );
+
+  // Autoplay
+  useEffect(() => {
+    if (slides.length < 2) return;
+    timerRef.current = setInterval(() => {
+      setCurrent((prev) => {
+        const next = (prev + 1) % slides.length;
+        Animated.sequence([
+          Animated.timing(fadeAnim, { toValue: 0, duration: 350, useNativeDriver: true }),
+          Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+        ]).start();
+        return next;
+      });
+    }, CAROUSEL_INTERVAL);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [slides.length, fadeAnim]);
+
+  if (slides.length === 0) return null;
+
+  const slide = slides[current];
+
+  const handlePrev = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    goTo((current - 1 + slides.length) % slides.length);
+  };
+
+  const handleNext = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    goTo((current + 1) % slides.length);
+  };
+
+  return (
+    <View style={[carouselStyles.wrapper, { height: CAROUSEL_HEIGHT }]}>
+      {/* Image avec fade */}
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+        <Image
+          source={{ uri: slide.url }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="cover"
+        />
+        {/* Gradient overlay (simulé avec une View semi-transparente) */}
+        <View style={carouselStyles.overlay} />
+      </Animated.View>
+
+      {/* Texte slide */}
+      <Animated.View style={[carouselStyles.caption, { opacity: fadeAnim }]}>
+        <Text style={carouselStyles.captionLabel}>DÉCOUVRIR</Text>
+        <Text style={carouselStyles.captionTitle} numberOfLines={2}>
+          {slide.name}
+        </Text>
+        <Pressable
+          onPress={() => router.push(`/(tabs)/product/${slide.id}`)}
+          style={({ pressed }) => [carouselStyles.captionBtn, pressed && { opacity: 0.75 }]}
+        >
+          <Text style={carouselStyles.captionBtnText}>Voir le produit</Text>
+        </Pressable>
+      </Animated.View>
+
+      {/* Flèche gauche */}
+      <Pressable
+        onPress={handlePrev}
+        style={[carouselStyles.arrow, carouselStyles.arrowLeft]}
+        hitSlop={12}
+      >
+        <Ionicons name="chevron-back" size={22} color="#fff" />
+      </Pressable>
+
+      {/* Flèche droite */}
+      <Pressable
+        onPress={handleNext}
+        style={[carouselStyles.arrow, carouselStyles.arrowRight]}
+        hitSlop={12}
+      >
+        <Ionicons name="chevron-forward" size={22} color="#fff" />
+      </Pressable>
+
+      {/* Dots */}
+      <View style={carouselStyles.dots}>
+        {slides.map((_, i) => (
+          <Pressable
+            key={i}
+            onPress={() => {
+              if (timerRef.current) clearInterval(timerRef.current);
+              goTo(i);
+            }}
+            style={[
+              carouselStyles.dot,
+              i === current && carouselStyles.dotActive,
+            ]}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const carouselStyles = StyleSheet.create({
+  wrapper: {
+    width: '100%',
+    backgroundColor: C.text,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.32)',
+  },
+  caption: {
+    position: 'absolute',
+    bottom: 72,
+    left: 64,
+    maxWidth: 440,
+    gap: 12,
+  },
+  captionLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 3,
+    color: 'rgba(255,255,255,0.65)',
+    textTransform: 'uppercase',
+  },
+  captionTitle: {
+    fontSize: 38,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    lineHeight: 44,
+    letterSpacing: -0.5,
+  },
+  captionBtn: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 4,
+    paddingHorizontal: 20,
+    paddingVertical: 11,
+  },
+  captionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: C.text,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  arrow: {
+    position: 'absolute',
+    top: '50%',
+    marginTop: -20,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowLeft: { left: 20 },
+  arrowRight: { right: 20 },
+  dots: {
+    position: 'absolute',
+    bottom: 24,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.40)',
+  },
+  dotActive: {
+    width: 22,
+    backgroundColor: '#FFFFFF',
+  },
+});
 
 // ════════════════════════════════════════════════════════════════════════════
 // NAVBAR WEB
@@ -72,14 +315,11 @@ function WebNavbar({
 
   return (
     <View style={webNavStyles.wrapper}>
-      {/* Bande supérieure */}
       <View style={[webNavStyles.inner, { maxWidth: isWide ? 1280 : 960 }]}>
-        {/* Logo */}
         <Pressable onPress={() => router.push('/')} style={webNavStyles.logo}>
           <Text style={webNavStyles.logoText}>LEICO</Text>
         </Pressable>
 
-        {/* Catégories */}
         <View style={webNavStyles.links}>
           {sections.map((s) => (
             <Pressable
@@ -97,9 +337,7 @@ function WebNavbar({
           ))}
         </View>
 
-        {/* Actions */}
         <View style={webNavStyles.actions}>
-          {/* Barre de recherche */}
           <View style={webNavStyles.searchBox}>
             <Ionicons name="search" size={16} color={C.muted} />
             <TextInput
@@ -111,10 +349,8 @@ function WebNavbar({
             />
           </View>
 
-          {/* Séparateur visuel */}
           <View style={webNavStyles.sep} />
 
-          {/* Favoris */}
           <Pressable
             onPress={() => router.push('/(tabs)/favorites')}
             style={({ pressed }) => [webNavStyles.iconBtn, pressed && { opacity: 0.5 }]}
@@ -123,7 +359,6 @@ function WebNavbar({
             <Ionicons name="heart-outline" size={20} color={C.text} />
           </Pressable>
 
-          {/* Compte */}
           <Pressable
             onPress={() => router.push('/(tabs)/compte')}
             style={({ pressed }) => [webNavStyles.iconBtn, pressed && { opacity: 0.5 }]}
@@ -132,7 +367,6 @@ function WebNavbar({
             <Ionicons name="person-outline" size={20} color={C.text} />
           </Pressable>
 
-          {/* Admin */}
           {isAdmin && (
             <Pressable
               onPress={() => router.push('/admin')}
@@ -146,7 +380,6 @@ function WebNavbar({
             </Pressable>
           )}
 
-          {/* Panier */}
           <CartButton onPress={onCartPress} />
         </View>
       </View>
@@ -161,7 +394,6 @@ const webNavStyles = StyleSheet.create({
     borderBottomColor: C.border,
     alignItems: 'center',
     zIndex: 100,
-    // shadow légère
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -182,11 +414,7 @@ const webNavStyles = StyleSheet.create({
     letterSpacing: 4,
     color: C.text,
   },
-  links: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 28,
-  },
+  links: { flex: 1, flexDirection: 'row', gap: 28 },
   link: { paddingVertical: 4 },
   linkText: {
     fontSize: 13,
@@ -195,11 +423,7 @@ const webNavStyles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -215,7 +439,7 @@ const webNavStyles = StyleSheet.create({
     fontSize: 13,
     color: C.text,
     width: 180,
-    outlineStyle: 'none', // web only
+    outlineStyle: 'none',
   } as any,
   iconBtn: {
     width: 36,
@@ -225,12 +449,7 @@ const webNavStyles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'transparent',
   },
-  sep: {
-    width: 1,
-    height: 20,
-    backgroundColor: C.border,
-    marginHorizontal: 4,
-  },
+  sep: { width: 1, height: 20, backgroundColor: C.border, marginHorizontal: 4 },
   adminBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -299,36 +518,14 @@ const mobileNavStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: C.border,
   },
-  logo: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: 4,
-    color: C.text,
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
+  logo: { fontSize: 18, fontWeight: '800', letterSpacing: 4, color: C.text },
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   adminIcon: { padding: 2 },
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// HERO (web uniquement)
+// HERO (web uniquement) — plus compact car remplacé par le carousel
 // ════════════════════════════════════════════════════════════════════════════
-function HeroBanner() {
-  return (
-    <View style={heroStyles.wrapper}>
-      <View style={heroStyles.content}>
-        <Text style={heroStyles.eyebrow}>Nouvelle collection</Text>
-        <Text style={heroStyles.title}>Printemps{'\n'}2025</Text>
-        <Text style={heroStyles.sub}>
-          Des pièces conçues pour durer, des silhouettes pour vous.
-        </Text>
-      </View>
-    </View>
-  );
-}
 
 const heroStyles = StyleSheet.create({
   wrapper: {
@@ -354,15 +551,11 @@ const heroStyles = StyleSheet.create({
     letterSpacing: -1,
     marginBottom: 20,
   },
-  sub: {
-    fontSize: 16,
-    color: '#AAAAAA',
-    lineHeight: 24,
-  },
+  sub: { fontSize: 16, color: '#AAAAAA', lineHeight: 24 },
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// SECTION PRODUITS WEB (grille)
+// SECTION PRODUITS WEB
 // ════════════════════════════════════════════════════════════════════════════
 function WebSection({
   section,
@@ -379,7 +572,6 @@ function WebSection({
 
   return (
     <View style={webSectionStyles.wrapper}>
-      {/* En-tête */}
       <View style={webSectionStyles.header}>
         <Text style={webSectionStyles.title}>{section.category_name}</Text>
         <Pressable
@@ -395,7 +587,6 @@ function WebSection({
         </Pressable>
       </View>
 
-      {/* Grille */}
       <View style={[webSectionStyles.grid, { gap: 16 }]}>
         {preview.map((product: any) => (
           <View
@@ -411,35 +602,20 @@ function WebSection({
 }
 
 const webSectionStyles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 56,
-    paddingHorizontal: 48,
-  },
+  wrapper: { marginBottom: 56, paddingHorizontal: 48 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     marginBottom: 20,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: C.text,
-    letterSpacing: -0.3,
-  },
-  viewAll: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: C.muted,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
+  title: { fontSize: 22, fontWeight: '700', color: C.text, letterSpacing: -0.3 },
+  viewAll: { fontSize: 13, fontWeight: '500', color: C.muted },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// SECTION PRODUITS MOBILE (horizontal scroll)
+// SECTION PRODUITS MOBILE
 // ════════════════════════════════════════════════════════════════════════════
 function MobileSection({
   section,
@@ -508,28 +684,18 @@ function MobileDrawer({
   const isAdmin = useIsAdmin();
 
   return (
-    <Modal
-      visible={visible}
-      animationType="fade"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={drawerStyles.overlay}>
         <View style={drawerStyles.drawer}>
-          {/* Close */}
           <Pressable onPress={onClose} style={drawerStyles.closeBtn}>
             <Ionicons name="close" size={26} color={C.text} />
           </Pressable>
 
           <Text style={drawerStyles.brand}>LEICO</Text>
 
-          {/* Admin */}
           {isAdmin && (
             <Pressable
-              onPress={() => {
-                onClose();
-                router.push('/admin');
-              }}
+              onPress={() => { onClose(); router.push('/admin'); }}
               style={drawerStyles.adminRow}
             >
               <Ionicons name="shield-checkmark" size={18} color={C.admin} />
@@ -564,11 +730,7 @@ function MobileDrawer({
 }
 
 const drawerStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
+  overlay: { flex: 1, flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.45)' },
   drawer: {
     width: '78%',
     maxWidth: 320,
@@ -578,13 +740,7 @@ const drawerStyles = StyleSheet.create({
     paddingBottom: 32,
   },
   closeBtn: { alignSelf: 'flex-end', marginBottom: 24 },
-  brand: {
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: 4,
-    color: C.text,
-    marginBottom: 28,
-  },
+  brand: { fontSize: 22, fontWeight: '800', letterSpacing: 4, color: C.text, marginBottom: 28 },
   adminRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -595,16 +751,8 @@ const drawerStyles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 12,
   },
-  adminText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: C.admin,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: C.border,
-    marginVertical: 16,
-  },
+  adminText: { fontSize: 15, fontWeight: '700', color: C.admin },
+  divider: { height: 1, backgroundColor: C.border, marginVertical: 16 },
   label: {
     fontSize: 10,
     fontWeight: '700',
@@ -724,11 +872,16 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Hero (web uniquement) */}
-        {isWeb && <HeroBanner />}
+        {/* ── CAROUSEL (web + mobile, affiché avant le hero sur web) ── */}
+        {sections.length > 0 && !searchQuery && (
+          <ProductCarousel sections={sections} />
+        )}
 
-        {/* Sections */}
-        <View style={isWeb ? { paddingTop: 48 } : undefined}>
+        {/* Hero (web uniquement, après le carousel) */}
+        {isWeb && !searchQuery}
+
+        {/* Sections produits */}
+        <View style={isWeb ? { paddingTop: 48 } : { paddingTop: 16 }}>
           {filteredSections.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={40} color={C.muted} />
